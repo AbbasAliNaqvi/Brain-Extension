@@ -7,7 +7,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(morgan("dev")); 
+app.use(morgan("dev"));
+
+app.use("/auth", require("./routes/auth.routes"));
 
 app.get("/", (req, res) => {
   res.send("Brain Extension is Running Perfectly!");

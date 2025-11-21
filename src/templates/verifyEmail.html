@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Verification Code</title>
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #0d0f14;
+      padding: 0;
+      margin: 0;
+      color: #ffffff;
+    }
+    .container {
+      max-width: 480px;
+      margin: 40px auto;
+      background: #141823;
+      border-radius: 14px;
+      padding: 30px;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 0 25px rgba(93, 63, 211, 0.2);
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      color: #e1e4ff;
+    }
+    .subtitle {
+      font-size: 14px;
+      text-align: center;
+      color: #b9bed1;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .code-box {
+      margin: 28px auto;
+      padding: 18px 0;
+      text-align: center;
+      font-size: 32px;
+      letter-spacing: 10px;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(90deg,#3f00ff,#943cff);
+      border-radius: 12px;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #8c93a7;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="title">Verify Your Email</div>
+    <div class="subtitle">
+      Welcome to <strong>Brain Extension</strong> — your personal intelligent memory system.<br />
+      Use the code below to verify your account.
+    </div>
+
+    <div class="code-box">{{CODE}}</div>
+
+    <div class="footer">
+      If this wasn’t you, ignore this email.<br />
+      © 2025 Brain-Extension. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
