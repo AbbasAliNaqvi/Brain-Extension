@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  backend:
+    container_name: brain-extension-backend
+    build: .
+    restart: always
+    ports:
+      - "5050:5050"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+    volumes:
+      - .:/app                
+      - /app/node_modules    
+
+  mongo:
+    container_name: brain-extension-mongo
+    image: mongo:6.0
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
