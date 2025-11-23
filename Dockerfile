@@ -6,6 +6,8 @@ COPY package.json package-lock.json ./
 
 RUN npm install
 
+RUN mkdir -p uploads
+
 EXPOSE 5050
 
 CMD ["npm", "run", "dev"]

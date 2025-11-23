@@ -11,6 +11,8 @@ app.use(morgan("dev"));
 
 app.use("/auth", require("./routes/auth.routes"));
 
+app.use("/files", require("./routes/file.routes"));
+
 app.get("/", (req, res) => {
   res.send("Brain Extension is Running Perfectly!");
 });

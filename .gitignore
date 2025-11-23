@@ -144,3 +144,6 @@ docker-compose.override.yml
 
 #Mongo data
 mongo_data/
+
+# Local uploads
+uploads/

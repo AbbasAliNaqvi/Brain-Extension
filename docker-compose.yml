@@ -12,8 +12,9 @@ services:
     depends_on:
       - mongo
     volumes:
-      - .:/app                
-      - /app/node_modules    
+      - .:/app
+      - /app/node_modules
+      - ./uploads:/app/uploads
 
   mongo:
     container_name: brain-extension-mongo
