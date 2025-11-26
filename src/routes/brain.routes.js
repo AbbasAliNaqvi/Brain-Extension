@@ -5,4 +5,6 @@ const Controller = require("../controllers/brain.controller");
 
 router.post("/process", auth, Controller.intake);
 
+router.post("/ask", auth, Controller.createBrainRequest);
+
 module.exports = router;

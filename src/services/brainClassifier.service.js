@@ -1,4 +1,4 @@
-const { ruleBaseRouter } = require("./brainRouter.service");
+const { ruleBaseRouter } = require("./brainRules.service");
 
 function scoreKeywords(
     query,

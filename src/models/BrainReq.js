@@ -23,6 +23,9 @@ const brainRequestSchema = new mongoose.Schema({
         enum: ["frontal", "temporal", "parietal", "occipital", "auto"],
         default: "auto",
     },
+    selectedLobe: String,
+    routerReason: String,
+    routerConfidence: Number,
     status: {
         type: String,
         enum: ["pending", "processing", "done", "error"],
