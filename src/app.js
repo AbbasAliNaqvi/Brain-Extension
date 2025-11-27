@@ -15,6 +15,8 @@ app.use("/files", require("./routes/file.routes"));
 
 app.use("/brain", require("./routes/brain.routes"));
 
+app.use("/memory", require("./routes/memory.routes"));
+
 app.get("/", (req, res) => {
   res.send("Brain Extension is Running Perfectly!");
 });

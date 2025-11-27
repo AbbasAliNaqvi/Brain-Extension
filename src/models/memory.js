@@ -4,6 +4,7 @@ const MemorySchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+        index: true,
         required: true
     },
     content: {
@@ -29,6 +30,12 @@ const MemorySchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+});
+
+MemorySchema.index({
+    content: "text",
+    context: "text",
+    tags: "text"
 });
 
 module.exports = mongoose.model("Memory", MemorySchema);
