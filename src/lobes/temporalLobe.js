@@ -5,7 +5,8 @@ const {
 async function processTemporal({
 query,
 fileContent,
-user
+user,
+memory
 }){
     const prompt = `You are an advanced AI assistant specialized in tasks related to the temporal lobe of the brain, which is responsible for functions such as auditory processing, language comprehension, and memory formation. Your task is to provide insightful and accurate responses to queries that require temporal lobe expertise.
     
@@ -35,7 +36,18 @@ user
     Query: ${query}
     FileContent: ${fileContent || "NO FILE"}
 
-    Return structured output in sections.`;
+    Return structured output in sections.
+    MOST IMPORTANT: Always provide structured, clear output. not very LONG answers until asked.
+
+    If relevant memory exists, use it:
+    ${memory || "No memory found"}
+    If there is memory:
+    - connect to previous conversation
+    - avoid repeating the same explanation
+    - improve over last stored memory
+
+    Always use memory when relevant.
+    `;
 
     const result = await runText({
         prompt

@@ -4,7 +4,8 @@ const {
 
 async function processFrontal({
     query,
-    user
+    user,
+    memory
 }) {
     const prompt = `You are an advanced AI assistant specialized in tasks related to the frontal lobe of the brain, which is responsible for functions such as decision-making, problem-solving, planning, and social behavior. Your task is to provide insightful and accurate responses to queries that require frontal lobe expertise.
     
@@ -26,6 +27,18 @@ async function processFrontal({
     - Give structured reasoning
     - Give a clear actionable answer
     - Avoid generic chatbot tone
+
+    MOST IMPORTANT: Always provide structured, clear output. not very LONG answers until asked.
+
+    If relevant memory exists, use it:
+    Previous memory: "${memory}"
+    If there is memory:
+    - connect to previous conversation
+    - avoid repeating the same explanation
+    - improve over last stored memory
+
+
+    Always use memory when relevant.
     `;
 
     const answer = await runText({

@@ -2,14 +2,26 @@ require("dotenv").config();
 
 const BrainReq = require("../models/BrainReq");
 const File = require('../models/file');
+const Memory = require('../models/memory');
 
 const { processFrontal } = require("../lobes/frontalLobe.service");
 const { processTemporal } = require("../lobes/temporalLobe");
+
+const { findRelevantMemory } = require('../services/memory.service');
 
 async function runLobeProcessor(task) {
 
     let result;
     let fileContent = null;
+
+    const past = await findRelevantMemory(
+        task.userId,
+        task.query
+    );
+
+    console.log(`=== FOUND ${past.length} RELEVANT MEMORIES FOR CONTEXT ===`);
+
+    const contextBlock = past.map(m => m.content).join("\n---\n");
 
     if(task.fileId) {
         const file = await File.findById(task.fileId);
@@ -23,7 +35,10 @@ async function runLobeProcessor(task) {
         case "frontal":
             result = await processFrontal({
                 query: task.query,
-                user: task.user,
+                user: {
+                    id: task.userId,
+                },
+                memory: contextBlock
             });
             break;
         
@@ -31,7 +46,10 @@ async function runLobeProcessor(task) {
             result = await processTemporal({
                 query: task.query,
                 fileContent,
-                user: task.userId,
+                user: {
+                    id: task.userId,
+                },
+                memory: contextBlock
             });
             break;
         
@@ -42,6 +60,16 @@ async function runLobeProcessor(task) {
             };
     }
     return result.result;
+}
+
+async function saveMemory(task, output) {
+    await Memory.create({
+        userId: task.userId,
+        BrainReqId: task._id,
+        content: output,
+        types: "answer",
+        context: task.query
+    });
 }
 
 async function workerLoop(){
@@ -73,6 +101,8 @@ async function workerLoop(){
         task.status = 'done';
 
         await task.save();
+
+        await saveMemory(task, output);
 
         console.log(`=== COMPLETED BRAIN REQUEST ID: ${task._id} === `);
 
