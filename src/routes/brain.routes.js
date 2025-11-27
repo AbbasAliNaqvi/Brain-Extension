@@ -7,4 +7,6 @@ router.post("/process", auth, Controller.intake);
 
 router.post("/ask", auth, Controller.createBrainRequest);
 
+router.get("/result/:id", auth, Controller.getResult);
+
 module.exports = router;

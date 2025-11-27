@@ -3,6 +3,7 @@ const {
     decideFinalLobe
 } = require("../services/brainRouter.service");
 const File = require("../models/file");
+const { request } = require("express");
 
 exports.createBrainRequest = async (req,res) => {
     try {
@@ -58,6 +59,32 @@ exports.createBrainRequest = async (req,res) => {
             message: err.message
         });
     }    
+};
+
+exports.getResult = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const doc = await BrainReq.findById(id);
+
+        if(!doc) {
+            return res.status(404),json({
+                status: "ERROR",
+                message: "BRAIN REQUEST NOT FOUND"
+            });
+        }
+
+        return res.json({
+            status: "OK",
+            request: doc
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
+    }
 };
 
 exports.intake = async (req, res) => {
