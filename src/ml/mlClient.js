@@ -9,17 +9,22 @@ if(!apiKey) {
 const gennAI = new GoogleGenerativeAI(apiKey);
 
 const model = gennAI.getGenerativeModel({
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash-lite"
 });
 
 async function runText({
     prompt
 }) {
-    const response = await model.generateContent(prompt);
+    const result = await model.generateContentStream(prompt);
 
-    const test = response.response.text();
+    let final = "";
 
-    return test;
+    for await (const chunk of result.stream) {
+        const text = chunk.text();
+        final += text;
+    }
+
+    return final;
 }
 
 async function runWithImage({

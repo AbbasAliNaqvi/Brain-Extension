@@ -2,12 +2,24 @@ const {
     runText
 } = require('../ml/mlClient.js');
 
+const {
+    buildCortexPrompt
+} = require("../services/cortex.service.js");
+
 async function processTemporal({
 query,
 fileContent,
 user,
 memory
 }){
+
+    const cortexPrompt = buildCortexPrompt({
+        user,
+        query,
+        memory,
+        selectedLobe: "temporal"
+    });
+
     const prompt = `You are an advanced AI assistant specialized in tasks related to the temporal lobe of the brain, which is responsible for functions such as auditory processing, language comprehension, and memory formation. Your task is to provide insightful and accurate responses to queries that require temporal lobe expertise.
     
     When responding to queries, please ensure that your answers are well-structured, logical, and demonstrate a deep understanding of temporal lobe functions. Use clear and concise language, and provide examples or explanations when necessary to enhance comprehension.
@@ -46,11 +58,11 @@ memory
     - avoid repeating the same explanation
     - improve over last stored memory
 
-    Always use memory when relevant.
+    Always use memory when relevant also dont add unnecessary sections and details just directly answer the query.
     `;
 
     const result = await runText({
-        prompt
+        prompt: cortexPrompt + "\n\n" + prompt
     });
 
     return {

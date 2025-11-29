@@ -2,11 +2,23 @@ const {
     runText
 } = require("../ml/mlClient.js") ;
 
+const {
+    buildCortexPrompt
+} = require("../services/cortex.service.js");
+
 async function processFrontal({
     query,
     user,
     memory
 }) {
+
+    const cortexPrompt = buildCortexPrompt({
+        user,
+        query,
+        memory,
+        selectedLobe: "frontal"
+    });
+
     const prompt = `You are an advanced AI assistant specialized in tasks related to the frontal lobe of the brain, which is responsible for functions such as decision-making, problem-solving, planning, and social behavior. Your task is to provide insightful and accurate responses to queries that require frontal lobe expertise.
     
     When responding to queries, please ensure that your answers are well-structured, logical, and demonstrate a deep understanding of frontal lobe functions. Use clear and concise language, and provide examples or explanations when necessary to enhance comprehension.
@@ -37,12 +49,11 @@ async function processFrontal({
     - avoid repeating the same explanation
     - improve over last stored memory
 
-
-    Always use memory when relevant.
+    Always use memory when relevant also dont add unnecessary sections and details just directly answer the query.
     `;
 
     const answer = await runText({
-        prompt
+        prompt : cortexPrompt + "\n\n" +prompt 
     });
 
     return {
