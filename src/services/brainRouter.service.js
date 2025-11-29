@@ -1,12 +1,15 @@
 const { ruleBaseRouter } = require("./brainRules.service");
 const { classifyBrainRequest } = require("./brainClassifier.service");
+const { runCortex } = require("./cortex.service");
 
-function decideFinalLobe({
+async function decideFinalLobe({
     query,
     fileMime,
     userSettings,
+    memory,
+    user
 }){
-    const ruleLobe = ruleBaseRouter({
+    const ruleDecision = ruleBaseRouter({
         query,
         fileMime
     });
@@ -17,37 +20,20 @@ function decideFinalLobe({
         userSettings
     });
 
-    if(cls.lobe === "parietal" && userSettings && !userSettings.memoryEnabled){
-        return {
-            lobe: ruleLobe,
-            reason: "MEMORY DISABLED - FALLBACK TO RULE ENGINE",
-            confidence: cls.confidence
-        };
-    }
+    let preliminaryLobe = cls.confidence >= 0.7 ? cls.lobe : ruleDecision;
 
-    if(cls.lobe === "occipital" && userSettings && !userSettings.visionEnabled){
-        return {
-            lobe: ruleLobe,
-            reason: "VISION DISABLED - FALLBACK TO RULE ENGINE",
-            confidence: cls.confidence
-        };
-    }
-
-    if(cls.confidence >= 0.7){
-        return {
-            lobe: cls.lobe,
-            reason: "HIGH CONFIDENCE FROM CLASSIFIER",
-            confidence: cls.confidence
-        };
-    }
+    const cortex = await runCortex({
+        user,
+        query,
+        memory,
+        selectedLobe: preliminaryLobe
+    });
 
     return {
-        lobe: ruleLobe,
-        reason: "RULE ENGINE SELECTED DUE TO LOW CONFIDENCE",
-        confidence: cls.confidence
-    };    
+        lobe: cortex.lobe || preliminaryLobe,
+        confidence: cls.confidence,
+        reason: cortex.reason || cls.reason|| "Cortex Decision"
+    };
 }
 
-module.exports = {
-    decideFinalLobe
-};
+module.exports.decideFinalLobe = decideFinalLobe;

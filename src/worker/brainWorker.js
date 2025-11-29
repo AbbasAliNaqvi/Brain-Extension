@@ -8,6 +8,7 @@ const { processFrontal } = require("../lobes/frontalLobe.service");
 const { processTemporal } = require("../lobes/temporalLobe");
 
 const { findRelevantMemory } = require('../services/memory.service');
+const { decideFinalLobe } = require("../services/brainRouter.service");
 
 async function runLobeProcessor(task) {
 
@@ -31,7 +32,17 @@ async function runLobeProcessor(task) {
         }
     }
     
-    switch(task.selectedLobe) {
+    const routing = await decideFinalLobe({
+        query: task.query,
+        fileMime: task.fileMime,
+        userSettings: task.userSettings,
+        memory: contextBlock,
+        user: {
+            id: task.userId,
+        }
+    });
+
+    switch(routing.lobe) {
         case "frontal":
             result = await processFrontal({
                 query: task.query,

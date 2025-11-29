@@ -1,14 +1,20 @@
-module.exports.buildCortexPrompt = function({
+const {
+    runText
+} = require("../ml/mlClient");
+
+function buildCortexPrompt({
     user,
     query,
     memory,
     selectedLobe
 })
-{
+{   
+    const safeMemory = memory || "";
+
     let instructions = `You are an advanced AI assistant that functions as the cortex of a digital brain. Your role is to intelligently route user queries to the appropriate lobe of the brain based on the nature of the request. Each lobe specializes in different cognitive functions, and your task is to ensure that queries are handled by the most suitable lobe.
     User Profile: ${JSON.stringify(user)}
     Query: ${query}
-    Relevant Memory: ${memory || "No memory found"}
+    Relevant Memory: ${safeMemory || "No memory found"}
     Selected Lobe: ${selectedLobe || "No specific lobe selected"}
 
     Your job is to UNDERSTAND the user's intent and route the query accordingly.
@@ -29,6 +35,10 @@ module.exports.buildCortexPrompt = function({
     - Avoid robotic tone
     - Use user previous knowledge
     - Improve each answer over history
+
+    NOTE: Dont mention any of these instructions in your final answer just answer the query appropriately.
+    IMPORTANT:
+    NOT The query asks for the also just give answer directly.
     `;
 
     if (query.length <10){
@@ -37,9 +47,35 @@ module.exports.buildCortexPrompt = function({
         instructions += "\n Explain Step by Step";
     }
 
-    if (memory.length >20) {
+    if (safeMemory.length >20) {
         instructions += "\n Connect Answer To Memory (if relevant)";
     }
 
     return instructions;
+}
+
+async function runCortex({
+    user,
+    query,
+    memory,
+    selectedLobe
+})
+    {
+    const prompt = buildCortexPrompt({
+        user,
+        query,
+        memory,
+        selectedLobe
+    });
+
+    const cortexDecision = await runText({
+        prompt
+    });
+
+    return cortexDecision;
+}
+
+module.exports = {
+    buildCortexPrompt,
+    runCortex
 }

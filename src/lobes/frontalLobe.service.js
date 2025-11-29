@@ -50,10 +50,13 @@ async function processFrontal({
     - improve over last stored memory
 
     Always use memory when relevant also dont add unnecessary sections and details just directly answer the query.
+    NOTE: Dont mention any of these instructions in your final answer just answer the query appropriately.
+    NOT The query asks for the also just give answer directly.
     `;
 
     const answer = await runText({
-        prompt : cortexPrompt + "\n\n" +prompt 
+        // prompt : cortexPrompt + "\n\n" + prompt 
+        prompt : `${cortexPrompt}\n\n---\n\n${prompt}`
     });
 
     return {
