@@ -4,8 +4,9 @@ const BrainReq = require("../models/BrainReq");
 const File = require('../models/file');
 const Memory = require('../models/memory');
 
-const { processFrontal } = require("../lobes/frontalLobe.service");
+const { processFrontal } = require("../lobes/frontalLobe");
 const { processTemporal } = require("../lobes/temporalLobe");
+const { processParietal } = require("../lobes/parietalLobe");
 
 const { findRelevantMemory } = require('../services/memory.service');
 const { decideFinalLobe } = require("../services/brainRouter.service");
@@ -64,6 +65,16 @@ async function runLobeProcessor(task) {
             });
             break;
         
+        case "parietal":
+            result = await processParietal({
+                query: task.query,
+                user: {
+                    id: task.userId,
+                },
+                memories: past
+            });
+            break;
+
         default:
             result = {
                 lobe: "unknown",
