@@ -1,55 +1,69 @@
-const {
-    runWithImage,
-    runText
-} = require('../ml/mlClient');
+const fs = require("fs");
+const axios = require("axios");
+const File = require("../models/file");
+const { runWithImage } = require("../ml/mlClient");
+const { buildCortexPrompt } = require("../services/cortex.service");
+
+async function getImageBuffer(file) {
+    if (!file) throw new Error("File not found for visual processing");
+
+    if (file.storage === "local" || !file.storage) {
+        if (fs.existsSync(file.path)) {
+            return fs.readFileSync(file.path);
+        } else {
+            throw new Error("Local file not found on disk");
+        }
+    }
+
+    if (file.url && file.url.startsWith("http")) {
+        console.log("Downloading image from cloud...", file.url);
+        const response = await axios.get(file.url, { responseType: 'arraybuffer' });
+        return Buffer.from(response.data, 'binary');
+    }
+
+    throw new Error("Unsupported file storage type for Vision");
+}
 
 async function processOccipital({
     query,
-    fileContent,
+    fileId,
     user,
     memory
-})
-{
-    const prompt = `You Are the **Occipital Lobe** of a digital brain.
-    Youre Very specialized in processing VISUAL information. You analyze images, recognize patterns, and interpret visual data the best way even better than humans also you have a DEEP understanding of colors, shapes, and spatial relationships as well as emotions evoked by visual stimuli.
-    Your job is to PROCESS IMAGES and VISUAL DATA.
-    You are given:
-    - User: ${JSON.stringify(user)}
-    - Query: "${query}"
-    - Image content: "${fileContent || "NO IMAGE"}"
-    - Memory: "${memory || "No memory found"}"
+}) {
+
+    const file = await File.findById(fileId);
+    if (!file) throw new Error("No file provided for Visual Lobe");
+
+    const imageBuffer = await getImageBuffer(file);
+
+    const cortexPrompt = buildCortexPrompt({
+        user,
+        query,
+        memory,
+        selectedLobe: "occipital"
+    });
+
+    const finalPrompt = `
+    ${cortexPrompt}
     
-    Behavior rules:
-    - If image contains text, extract the text clearly.
-    - If the image is UI/screenshot: summarize features.
-    - If it's a photo: describe objects and context.
-    - If user asks something specific: answer directly.
-    - Avoid long answers.
-    Output format:
-    - Very short
-    - Human friendly
-    - No long essays
-    - No extra sections, just answer.
-    MOST IMPORTANT: Always provide structured, clear output. not very LONG answers until asked.
-    If no image found: Respond clearly: NO IMAGE FOUND.
+    You are the Occipital Lobe (Visual Cortex).
+    Analyze the provided image deeply.
+    
+    User Query: "${query}"
+    
+    If the query asks to extract text, provide the text exactly.
+    If the query asks to explain, describe the visual elements.
     `;
 
-    if(!fileContent || fileContent.trim().length === 0){
-        return {
-            lobe: "occipital",
-            result: "NO IMAGE FOUND"
-        }; 
-    }
-
-    const result = await runWithImage({
-        prompt,
-        imageBuffer: fileContent,
-        mimeType: fileMime
+    const answer = await runWithImage({
+        prompt: finalPrompt,
+        imageBuffer: imageBuffer,
+        mimeType: file.mimeType || "image/jpeg"
     });
 
     return {
         lobe: "occipital",
-        result
+        result: answer
     };
 }
 

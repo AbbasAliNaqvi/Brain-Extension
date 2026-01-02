@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs");
 
 const BrainReq = require("../models/BrainReq");
 const File = require('../models/file');
@@ -16,6 +17,7 @@ async function runLobeProcessor(task) {
 
     let result;
     let fileContent = null;
+    let file = null;
 
     const past = await findRelevantMemory(
         task.userId,
@@ -23,20 +25,23 @@ async function runLobeProcessor(task) {
     );
 
     console.log(`=== FOUND ${past.length} RELEVANT MEMORIES FOR CONTEXT ===`);
-
     const contextBlock = past.map(m => m.content).join("\n---\n");
 
     if(task.fileId) {
-        const file = await File.findById(task.fileId);
+        file = await File.findById(task.fileId);
         
-        if(file && file.storage == "local") {
-            fileContent = require("fs").readFileSync(file.path, "utf-8");
+        if(file && file.storage === "local" && file.path && !file.mimeType.startsWith("image/")) {
+            try {
+                fileContent = fs.readFileSync(file.path, "utf-8");
+            } catch (readErr) {
+                console.warn("Could not read local file text:", readErr.message);
+            }
         }
     }
     
     const routing = await decideFinalLobe({
         query: task.query,
-        fileMime: task.fileMime,
+        fileMime: file?.mimeType,
         userSettings: task.userSettings,
         memory: contextBlock,
         user: {
@@ -44,13 +49,13 @@ async function runLobeProcessor(task) {
         }
     });
 
+    console.log(`>>> ROUTER SELECTED: ${routing.lobe} (${routing.reason})`);
+
     switch(routing.lobe) {
         case "frontal":
             result = await processFrontal({
                 query: task.query,
-                user: {
-                    id: task.userId,
-                },
+                user: { id: task.userId },
                 memory: contextBlock
             });
             break;
@@ -59,9 +64,7 @@ async function runLobeProcessor(task) {
             result = await processTemporal({
                 query: task.query,
                 fileContent,
-                user: {
-                    id: task.userId,
-                },
+                user: { id: task.userId },
                 memory: contextBlock
             });
             break;
@@ -69,9 +72,7 @@ async function runLobeProcessor(task) {
         case "parietal":
             result = await processParietal({
                 query: task.query,
-                user: {
-                    id: task.userId,
-                },
+                user: { id: task.userId },
                 memories: past
             });
             break;
@@ -79,11 +80,8 @@ async function runLobeProcessor(task) {
         case "occipital":
             result = await processOccipital({
                 query: task.query,
-                fileContent,
-                fileMime: file?.mimeType,
-                user: {
-                    id: task.userId,
-                },
+                fileId: task.fileId,
+                user: { id: task.userId },
                 memory: contextBlock
             });
             break;
@@ -98,6 +96,7 @@ async function runLobeProcessor(task) {
 }
 
 async function saveMemory(task, output) {
+    if (!output) return;
     await Memory.create({
         userId: task.userId,
         BrainReqId: task._id,
@@ -111,19 +110,13 @@ async function workerLoop(){
     console.log("\n=== BRAIN WORKER STARTED ===");
 
     const task = await BrainReq.findOneAndUpdate(
-    {
-        status: "pending"
-    },
-    {
-        status: "processing"
-    },
-    {
-        new: true
-    }
+        { status: "pending" },
+        { status: "processing" },
+        { new: true }
     );
 
     if(!task){
-        console.log("=== NO PENDING BRAIN PROCCESSING TASKS ===");
+        console.log("=== NO PENDING BRAIN PROCESSING TASKS ===");
         return;
     }
 
@@ -132,28 +125,23 @@ async function workerLoop(){
     try {
         const output = await runLobeProcessor(task);
 
-        task.output =output;
+        task.output = output;
         task.status = 'done';
-
         await task.save();
-
         await saveMemory(task, output);
 
         console.log(`=== COMPLETED BRAIN REQUEST ID: ${task._id} === `);
 
     } catch(err){
-        
         task.status = 'error';
         task.error = err.message;
-
         await task.save();
-
-        console.log("PROCESSING FAILED", err.message);
+        console.error(`=== PROCESSING FAILED [${task._id}] ===`, err.message);
     }
 }
 
-setInterval(workerLoop, 33000).unref();
+setInterval(workerLoop, 3000).unref();
 
 module.exports = {
     startBrainWorker: workerLoop
-}
+};
