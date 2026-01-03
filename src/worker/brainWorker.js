@@ -12,6 +12,7 @@ const { processOccipital } = require("../lobes/occipitalLobe");
 
 const { findRelevantMemory } = require('../services/memory.service');
 const { decideFinalLobe } = require("../services/brainRouter.service");
+const { notifyUser } = require("../services/socket.service");
 
 async function runLobeProcessor(task) {
 
@@ -130,6 +131,12 @@ async function workerLoop(){
         await task.save();
         await saveMemory(task, output);
 
+        notifyUser(task.userId, "brain_result", {
+            requestId: task._id,
+            status: "done",
+            output: output
+        });
+
         console.log(`=== COMPLETED BRAIN REQUEST ID: ${task._id} === `);
 
     } catch(err){
@@ -137,6 +144,13 @@ async function workerLoop(){
         task.error = err.message;
         await task.save();
         console.error(`=== PROCESSING FAILED [${task._id}] ===`, err.message);
+
+        notifyUser(task.userId, "brain_error", {
+            requestId: task._id,
+            status: "error",
+            error: err.message
+        });
+        
     }
 }
 
