@@ -27,11 +27,12 @@ exports.createBrainRequest = async (req,res) => {
             }
         }
         
-        const result = decideFinalLobe({
+        const result = await decideFinalLobe({
             query,
             fileMime,
             userSettings,
-            mode
+            mode,
+            user
         });
 
         const doc = await BrainReq.create({
@@ -72,7 +73,7 @@ exports.getResult = async (req, res) => {
         const doc = await BrainReq.findById(id);
 
         if(!doc) {
-            return res.status(404),json({
+            return res.status(404).json({
                 status: "ERROR",
                 message: "BRAIN REQUEST NOT FOUND"
             });
@@ -115,6 +116,40 @@ exports.intake = async (req, res) => {
             status: "OK",
             message: "BRAIN REQUEST RECEIVED",
             requestId: brainReq._id
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
+    }
+};
+
+exports.getDreamJournal = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const dreams = await BrainReq.find({
+            userId: userId,
+            query: "INTERNAL_DREAM_PROTOCOL",
+            status: "done"
+        })
+        .select("output createdAt")
+        .sort({ createdAt: -1 });
+
+        const journal = dreams.map(d => ({
+            id: d.id,
+            date: d.createdAt,
+            title: d.output?.title || "Untitled Dream",
+            insight: d.output?.insight || "No Insight Available",
+            action: d.output?.action || "Reflect On This"
+        }));
+
+        return res.json({
+            status: "OK",
+            count: journal.length,
+            journal: journal
         });
 
     } catch (err) {

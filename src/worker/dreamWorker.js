@@ -15,33 +15,38 @@ async function generateDream(userId) {
 
         const userObjectId = new mongoose.Types.ObjectId(userId);
 
-        const randomMemories = await Memory.aggregate([
-            {
-                $match: { userId: userObjectId }
-            },
-            {
-                $sample: { size: 3 }
-            }
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentMemories = await Memory.find({ 
+            userId: userObjectId,
+            createdAt: { $gte: oneDayAgo }
+        }).limit(1);
+
+        const deepMemories = await Memory.aggregate([
+            { $match: { userId: userObjectId, createdAt: { $lt: oneDayAgo } } },
+            { $sample: { size: 2 } }
         ]);
-    console.log(`Memories found: ${randomMemories.length}`);
 
-    if (randomMemories.length < 2){
-        console.log(`[Dreaming Protocol] Not enough memories to generate a dream. Going back to sleep.`);
-        return;
-    }
+        if (recentMemories.length === 0 && deepMemories.length === 0) {
+            console.log(`[Dreaming Protocol] Not enough memories to generate a dream. Going back to sleep.....`); 
+            return;
+        }
 
-    const fragments = randomMemories.map(m => `Fragment (${m.createdAt.toISOString().split('T')[0]}): ${m.content}`).join('\n\n');
+        const recentText = recentMemories.length ? `RECENT EXPERIENCE: ${recentMemories[0].content}` : "RECENT EXPERIENCE: None (User was inactive)";
+        
+        const deepText = deepMemories.map(m => `PAST KNOWLEDGE: ${m.content}`).join("\n");
 
     const prompt = `
-    You are the Subconscious Mind of a digital brain. 
+        You are the Subconscious Mind of a digital brain. 
         You are currently dreaming.
-        
-        Here are 3 random, unrelated memory fragments from the user's past:
-        ${fragments}
+        Input Data:
+        1. ${recentText}
+        2. ${deepText}
 
-        Your Goal:
-        - Hallucinate a connection between these unrelated things.
-        - Find a hidden philosophical pattern, a weird coincidence, or a creative spark.
+        Task:
+        - Analyze the User's RECENT EXPERIENCE.
+        - Connect it to their PAST KNOWLEDGE.
+        - If they learned something new, anchor it to an old concept.
+        - If the recent experience contradicts the past, highlight the conflict.
         - Be poetic, mysterious, and insightful.
         
         Output Format (JSON only):
@@ -96,10 +101,22 @@ async function generateDream(userId) {
 exports.startDreaming = () => {
     console.log("[Dreaming Protocol] ONLINE....");
 
-    cron.schedule('*/2 * * * *', async () => {
-        const user = await User.findOne({});
-        if (user) {
-            await generateDream(user._id);
+    cron.schedule('*/15 * * * *', async () => {
+        try {
+            console.log("[Cron] Waking up to check for dreamers...");
+            const users = await User.find({}, '_id name');
+
+            console.log(`[Cron] Found ${users.length} potential dreamers.`);
+
+            for (const user of users) {
+
+                await generateDream(user._id);
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+
+        } catch (err) {
+            console.error("[Cron Error] Dreaming cycle failed:", err.message);
         }
     });
 };
