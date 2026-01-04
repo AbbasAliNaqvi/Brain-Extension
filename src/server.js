@@ -4,7 +4,10 @@ const { Server } = require("socket.io");
 
 const app = require("./app");
 const connectDB = require("./config/db");
+
 const { startBrainWorker } = require("./worker/brainWorker");
+const { startDreaming } = require("./worker/dreamWorker");
+
 const socketService = require("./services/socket.service");
 
 const server = http.createServer(app);
@@ -19,8 +22,11 @@ const io = new Server(server, {
 socketService.init(io);
 
 async function startApp() {
+
   await connectDB();
+
   startBrainWorker();
+  startDreaming();
 
   const PORT = process.env.PORT || 5050;
 

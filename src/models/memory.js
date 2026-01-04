@@ -38,4 +38,4 @@ MemorySchema.index({
     tags: "text"
 });
 
-module.exports = mongoose.model("Memory", MemorySchema);
+module.exports = mongoose.models.Memory || mongoose.model("Memory", MemorySchema);
