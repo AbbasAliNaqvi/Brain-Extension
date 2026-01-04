@@ -47,7 +47,8 @@ async function runLobeProcessor(task) {
         memory: contextBlock,
         user: {
             id: task.userId,
-        }
+        },
+        mode: task.mode
     });
 
     console.log(`>>> ROUTER SELECTED: ${routing.lobe} (${routing.reason})`);
@@ -57,7 +58,8 @@ async function runLobeProcessor(task) {
             result = await processFrontal({
                 query: task.query,
                 user: { id: task.userId },
-                memory: contextBlock
+                memory: contextBlock,
+                mode: task.mode
             });
             break;
         
@@ -66,7 +68,8 @@ async function runLobeProcessor(task) {
                 query: task.query,
                 fileContent,
                 user: { id: task.userId },
-                memory: contextBlock
+                memory: contextBlock,
+                mode: task.mode
             });
             break;
         
@@ -74,7 +77,8 @@ async function runLobeProcessor(task) {
             result = await processParietal({
                 query: task.query,
                 user: { id: task.userId },
-                memories: past
+                memories: past,
+                mode: task.mode
             });
             break;
 
@@ -83,7 +87,8 @@ async function runLobeProcessor(task) {
                 query: task.query,
                 fileId: task.fileId,
                 user: { id: task.userId },
-                memory: contextBlock
+                memory: contextBlock,
+                mode: task.mode
             });
             break;
             
@@ -93,6 +98,10 @@ async function runLobeProcessor(task) {
                 result: "NO IMPLEMENTATION FOR THIS LOBE"
             };
     }
+    task.selectedLobe = routing.lobe;
+    task.routerReason = routing.reason;
+    task.routerConfidence = routing.confidence;
+    
     return result.result;
 }
 
@@ -154,7 +163,7 @@ async function workerLoop(){
     }
 }
 
-setInterval(workerLoop, 3000).unref();
+setInterval(workerLoop, 10000).unref();
 
 module.exports = {
     startBrainWorker: workerLoop

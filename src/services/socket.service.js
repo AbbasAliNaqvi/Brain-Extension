@@ -24,3 +24,5 @@ exports.notifyUser = (userId, event, data) => {
         console.log(`=====Emitted====='${event}'=====to=====${userId}`);
     }
 };
+
+//join Event = userId

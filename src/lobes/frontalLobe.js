@@ -9,14 +9,16 @@ const {
 async function processFrontal({
     query,
     user,
-    memory
+    memory,
+    mode
 }) {
 
     const cortexPrompt = buildCortexPrompt({
         user,
         query,
         memory,
-        selectedLobe: "frontal"
+        selectedLobe: "frontal",
+        mode
     });
 
     const prompt = `You are an advanced AI assistant specialized in tasks related to the frontal lobe of the brain, which is responsible for functions such as decision-making, problem-solving, planning, and social behavior. Your task is to provide insightful and accurate responses to queries that require frontal lobe expertise.

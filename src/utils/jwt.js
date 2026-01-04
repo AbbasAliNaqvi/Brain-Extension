@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
-const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES || "155m";
+const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES || "1555555m";
 const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES || "70d";
 
 function generateAccessToken(payload) {

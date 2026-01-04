@@ -28,7 +28,8 @@ async function processOccipital({
     query,
     fileId,
     user,
-    memory
+    memory,
+    mode
 }) {
 
     const file = await File.findById(fileId);
@@ -40,7 +41,8 @@ async function processOccipital({
         user,
         query,
         memory,
-        selectedLobe: "occipital"
+        selectedLobe: "occipital",
+        mode
     });
 
     const finalPrompt = `

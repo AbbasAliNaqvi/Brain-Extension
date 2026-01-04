@@ -7,7 +7,8 @@ async function decideFinalLobe({
     fileMime,
     userSettings,
     memory,
-    user
+    user,
+    mode
 }){
     const ruleDecision = ruleBaseRouter({
         query,
@@ -26,7 +27,8 @@ async function decideFinalLobe({
         user,
         query,
         memory,
-        selectedLobe: preliminaryLobe
+        selectedLobe: preliminaryLobe,
+        mode
     });
 
     return {

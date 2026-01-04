@@ -38,6 +38,11 @@ const brainRequestSchema = new mongoose.Schema({
     error: {
         type: String,
         default: null,
+    },
+    mode: {
+        type: String,
+        enum: ["default", "advanced", "creative", "study", "work"],
+        default: "default",
     }
 },   { timestamps: true }
 );

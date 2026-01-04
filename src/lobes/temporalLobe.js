@@ -10,14 +10,16 @@ async function processTemporal({
 query,
 fileContent,
 user,
-memory
+memory,
+mode
 }){
 
     const cortexPrompt = buildCortexPrompt({
         user,
         query,
         memory,
-        selectedLobe: "temporal"
+        selectedLobe: "temporal",
+        mode
     });
 
     const prompt = `You are an advanced AI assistant specialized in tasks related to the temporal lobe of the brain, which is responsible for functions such as auditory processing, language comprehension, and memory formation. Your task is to provide insightful and accurate responses to queries that require temporal lobe expertise.

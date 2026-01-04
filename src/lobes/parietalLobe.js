@@ -4,7 +4,8 @@ const { buildCortexPrompt } = require("../services/cortex.service");
 async function processParietal({
     query,
     user,
-    memories = []
+    memories = [],
+    mode
 }
 ) {
     const memoryPayload = memories.map(m =>({
@@ -17,7 +18,8 @@ async function processParietal({
         user,
         query,
         memory: JSON.stringify(memoryPayload),
-        selectedLobe: "parietal"
+        selectedLobe: "parietal",
+        mode
     });
 
     const lobePrompt = `You Are the **Parietal Lobe** of a digital brain.

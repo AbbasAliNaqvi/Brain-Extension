@@ -9,7 +9,8 @@ exports.createBrainRequest = async (req,res) => {
     try {
         const {
             query,
-            fileId
+            fileId,
+            mode = "default"
         } = req.body;
 
         const user = req.user;
@@ -25,11 +26,12 @@ exports.createBrainRequest = async (req,res) => {
                 inputType = "file";
             }
         }
-
+        
         const result = decideFinalLobe({
             query,
             fileMime,
-            userSettings
+            userSettings,
+            mode
         });
 
         const doc = await BrainReq.create({
@@ -37,6 +39,7 @@ exports.createBrainRequest = async (req,res) => {
             inputType,
             query,
             fileId,
+            mode,
             lobe: "auto",
             selectedLobe: result.lobe,
             routerReason: result.reason,
@@ -50,6 +53,7 @@ exports.createBrainRequest = async (req,res) => {
             requestId: doc._id,
             selectedLobe: result.lobe,
             routerReason: result.reason,
+            mode: doc.mode,
             confidence: result.confidence
         });
         
@@ -92,7 +96,8 @@ exports.intake = async (req, res) => {
         const {
             query,
             lobe="auto",
-            fileId=null
+            fileId=null,
+            mode = "default"
         } = req.body;
 
         const inputType = fileId ? "file" : "text";
