@@ -17,8 +17,13 @@ app.use("/brain", require("./routes/brain.routes"));
 
 app.use("/memory", require("./routes/memory.routes"));
 
-app.get("/", (req, res) => {
-  res.send("Brain Extension is Running Perfectly!");
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "UP",
+        message: "Brain Extension is Running Perfectly!",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
 });
 
 module.exports = app;

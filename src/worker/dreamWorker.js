@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const mongoose = require("mongoose");
 
 const BrainReq = require("../models/BrainReq");
-const Memory = require("../models/Memory");
+const Memory = require("../models/memory");
 const User = require("../models/User");
 
 const { runText } = require("../ml/mlClient");
