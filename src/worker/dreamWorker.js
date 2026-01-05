@@ -101,7 +101,7 @@ async function generateDream(userId) {
 exports.startDreaming = () => {
     console.log("[Dreaming Protocol] ONLINE....");
 
-    cron.schedule('*/15 * * * *', async () => {
+    cron.schedule('0 */2 * * *', async () => {
         try {
             console.log("[Cron] Waking up to check for dreamers...");
             const users = await User.find({}, '_id name');

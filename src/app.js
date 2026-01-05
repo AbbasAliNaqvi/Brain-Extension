@@ -3,19 +3,13 @@ const cors = require("cors");
 require("dotenv").config();
 const morgan = require("morgan");
 
+const brainShield = require("./middleware/brainShield");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
-
-app.use("/auth", require("./routes/auth.routes"));
-
-app.use("/files", require("./routes/file.routes"));
-
-app.use("/brain", require("./routes/brain.routes"));
-
-app.use("/memory", require("./routes/memory.routes"));
 
 app.get("/health", (req, res) => {
     res.status(200).json({
@@ -25,5 +19,15 @@ app.get("/health", (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+app.use(brainShield);
+
+app.use("/auth", require("./routes/auth.routes"));
+
+app.use("/files", require("./routes/file.routes"));
+
+app.use("/brain", require("./routes/brain.routes"));
+
+app.use("/memory", require("./routes/memory.routes"));
 
 module.exports = app;
