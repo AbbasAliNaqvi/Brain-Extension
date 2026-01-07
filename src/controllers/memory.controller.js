@@ -1,5 +1,7 @@
 const Memory = require('../models/memory');
 
+const publishEvent = require("../events/publishEvent");
+
 exports.listMemories = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -79,6 +81,47 @@ exports.searchMemories = async (req, res) => {
             memories,
         });
     } catch (err) {
+        return res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
+    }
+};
+
+exports.addMemory = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const {
+            text,
+            type = "answer"
+        } = req.body;
+
+        if (!text) {
+            return res.status(400).json({ status: "ERROR", message: "Content is required" });
+        }
+
+        const memoryData = {
+            userId,
+            content: text,
+            types: type
+        };
+
+        const newMemory = await Memory.create(memoryData);
+
+        await publishEvent("MEMORY_INGESTED", {
+            id: newMemory._id,
+            userId: userId,
+            content: newMemory.content,
+        });
+
+        return res.status(201).json({
+            status: "OK",
+            message: "MEMORY ADDED SUCCESSFULLY !!",
+            memory: newMemory
+        });
+
+    } catch (err) {
+        console.error("ADD MEMORY ERROR:", err);
         return res.status(500).json({
             status: "ERROR",
             message: err.message
