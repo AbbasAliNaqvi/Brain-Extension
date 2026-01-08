@@ -18,6 +18,10 @@ const MemorySchema = new mongoose.Schema({
     tags: [{
         type: String
     }],
+    vector:{
+        type: [Number],
+        default: [],
+    },
     context: {
         type: String
     },
@@ -34,7 +38,6 @@ const MemorySchema = new mongoose.Schema({
 
 MemorySchema.index({
     content: "text",
-    context: "text",
     tags: "text"
 });
 

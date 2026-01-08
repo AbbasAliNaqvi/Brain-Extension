@@ -3,6 +3,9 @@ const {
     producer
 } = require("../events/eventBus");
 
+const Memory = require("../models/memory");
+const { generateVector } = require("../services/vector.service");
+
 const STREAM_KEY = "BRAIN_STREAM";
 const GROUP_NAME = "BRAIN_WORKERS";
 const CONSUMER_NAME = "WORKER_1";
@@ -35,9 +38,20 @@ const startNeuralBus = async () => {
                     console.log(`[StreamWorker] Processing Event: ${eventType}`, eventData);
 
                     if(eventType === "MEMORY_INGESTED"){
+                        try{
                         console.log("[StreamWorker] Vectorizing Memory....");
-                    }
 
+                        const vector = await generateVector(eventData.content);
+
+                        await Memory.findByIdAndUpdate(eventData.id, {
+                            vector: vector,
+                            tags: ["processed", "ai-vectorized"]
+                        });
+                        console.log("[StreamWorker] Memory Vectorization Complete");
+                        } catch(err){
+                        console.error("[StreamWorker] Error Vectorizing Memory:", err);
+                        }
+                    }
                     await consumer.xack(STREAM_KEY, GROUP_NAME, id);
                 }
             }
