@@ -1,6 +1,10 @@
+const mongoose = require('mongoose');
+
 const Memory = require('../models/memory');
 
 const publishEvent = require("../events/publishEvent");
+
+const { generateVector } = require("../services/vector.service");
 
 exports.listMemories = async (req, res) => {
     try {
@@ -68,19 +72,45 @@ exports.searchMemories = async (req, res) => {
             });
         }
         
-        const memories = await Memory.find({
-            userId,
-            $text: { $search: query }
-        }).sort({
-            createdAt: -1
-        }).limit(50);
+        console.log(`[Search] Vectorizing Query: ${query}`);
+
+        const vector = await generateVector(query);
+
+        const memories = await Memory.aggregate([
+            {
+                $vectorSearch: {
+                    index: "vector_index",
+                    path: "vector",
+                    queryVector: vector,
+                    numCandidates: 100,
+                    limit: 10,
+                    filter: { 
+                        userId: new mongoose.Types.ObjectId(userId)
+                    }
+
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    content: 1,
+                    types: 1,
+                    createdAt: 1,
+                    score: { 
+                        $meta: "vectorSearchScore"
+                    }
+                }
+            }
+        ]);
 
         return res.json({
             status: "OK",
             count: memories.length,
             memories,
         });
+
     } catch (err) {
+        console.error("SEARCH MEMORIES ERROR:", err);
         return res.status(500).json({
             status: "ERROR",
             message: err.message
