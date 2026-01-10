@@ -188,3 +188,162 @@ exports.verifyEmail = async (req, res) => {
         });
     }
 };
+
+// FORGOT PASSWORD
+exports.forgotPassword = async (req, res) => {
+    try {
+        const {
+            email
+        } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(200).json({
+                status: "OK",
+                message: "If Email exists, reset instructions sent"
+            });
+        }
+
+        const resetToken = crypto.randomBytes(32).toString("hex");
+
+        user.resetPasswordToken = crypto
+            .createHash("sha256")
+            .update(resetToken)
+            .digest("hex");
+        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        const baseUrl = process.env.RESET_PASSWORD_URL;
+        const resetUrl = `${baseUrl}/${resetToken}`;
+
+        const fs = require("fs");
+        const path = require("path");
+        const templatePath = path.join(__dirname, "../templates/resetPassword.html");
+
+        let html = fs.readFileSync(templatePath, "utf8");
+        html = html.replace(/\{\{\s*RESET_LINK\s*\}\}/g, resetUrl);
+
+        const sendHtmlEmail = require("../utils/emailHtml");
+        await sendHtmlEmail(
+            user.email,
+            "Secure Access Recovery Instructions [Brain-Extension]",
+            html
+        );
+
+        res.status(200).json({
+            status: "OK",
+            message: "Reset Link Sent to Email!"
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
+    }
+};
+
+// RESET PASSWORD
+exports.resetPassword = async (req, res) => {
+    try {
+        const {
+            token
+        } = req.params;
+        const {
+            password
+        } = req.body;
+
+        const hashedToken = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: {
+                $gt: Date.now()
+            }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                status: "ERROR",
+                message: "Token is invalid or has expired"
+            });
+        }
+
+        user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        if(!user.emailVerified) user.emailVerified = true;
+
+        await user.save();
+
+        res.status(200).json({
+            status: "OK",
+            message: "Password has been reset successfully"
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
+    }
+};
+
+exports.resetPasswordBridge = (req, res) => {
+    const { token } = req.params;
+
+    const appLink = `brainextension://auth/reset-password/${token}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Redirecting...</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+                background-color: #000000; 
+                color: #ffffff; 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                height: 100vh;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .loader {
+                border: 3px solid #333;
+                border-top: 3px solid #fff;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin-bottom: 24px;
+            }
+            p { font-size: 16px; color: #e5e5e5; margin: 0; }
+            a { color: #666; font-size: 13px; text-decoration: none; margin-top: 32px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          </style>
+        </head>
+        <body>
+          <div class="loader"></div>
+          <p>Opening Brain Extension...</p>
+          <a href="${appLink}">Click here if not redirected</a>
+          <script>
+            setTimeout(function() {
+                window.location.href = "${appLink}";
+            }, 50);
+          </script>
+        </body>
+      </html>
+    `;
+
+    res.send(html);
+};

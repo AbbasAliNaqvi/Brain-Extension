@@ -20,7 +20,12 @@ app.get("/health", (req, res) => {
     });
 });
 
-app.use(brainShield);
+app.use((req, res, next) => {
+    if (req.path.includes("/reset-password-bridge")){
+        return next();
+    }
+    brainShield(req, res, next);
+});
 
 app.use("/auth", require("./routes/auth.routes"));
 
