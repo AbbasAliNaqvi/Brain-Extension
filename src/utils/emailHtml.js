@@ -1,30 +1,25 @@
-const nodemailer = require("nodemailer");
+const axios = require('axios');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  logger: true, 
-  debug: true, 
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-module.exports = async function sendHtmlEmail(to, subject, html) {
+module.exports = async function sendHtmlEmail(to, subject, htmlContent) {
   try {
-    console.log("Attempting to send email to:", to); 
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to,
-      subject,
-      html,
-    });
-    console.log("Email sent successfully. Message ID:", info.messageId);
-    return info;
+    const data = {
+      service_id: process.env.EMAILJS_SERVICE_ID,
+      template_id: process.env.EMAILJS_TEMPLATE_ID,
+      user_id: process.env.EMAILJS_PUBLIC_KEY,
+      accessToken: process.env.EMAILJS_PRIVATE_KEY,
+      template_params: {
+        'to_email': to,
+        'subject': subject, 
+        'message': htmlContent
+    }
+  };
+
+  const response = await axios.post('https://api.emailjs.com/api/v1.0/email/send', data,)
+
+  console.log("Email sent Successfully");
+  return response.data;
   } catch (error) {
-    console.error("FATAL EMAIL ERROR:", error);
+    console.error("FATAL EMAIL ERROR:", error.response ? error.response.data : error.message);
     throw error;
   }
 };
