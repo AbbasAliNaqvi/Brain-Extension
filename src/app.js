@@ -30,6 +30,9 @@ app.use((req, res, next) => {
     if (req.path.includes("/reset-password-bridge")){
         return next();
     }
+    if (req.path.startsWith("/auth")){
+        return next();
+    }
     brainShield(req, res, next);
 });
 
