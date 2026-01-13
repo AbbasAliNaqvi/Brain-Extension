@@ -1,11 +1,17 @@
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 const morgan = require("morgan");
+const helmet = require("helmet");
+const compression = require("compression");
+
+require("dotenv").config();
 
 const brainShield = require("./middleware/brainShield");
 
 const app = express();
+
+app.use(helmet());
+app.use(compression());
 
 app.use(cors());
 app.use(express.json());
