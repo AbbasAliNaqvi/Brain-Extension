@@ -3,17 +3,21 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const compression = require("compression");
+const swaggerUi = require('swagger-ui-express');
 
 require("dotenv").config();
 
 const brainShield = require("./middleware/brainShield");
 const rateLimiter = require("./middleware/rateLimiter");
+const swaggerFile = require('./swagger-output.json');
 
 const app = express();
 
+swaggerFile.host = process.env.HOST || undefined; 
+swaggerFile.schemes = process.env.SCHEMES ? process.env.SCHEMES.split(',') : undefined;
+
 app.use(helmet());
 app.use(compression());
-
 app.use(rateLimiter);
 
 app.use(cors());
@@ -36,6 +40,9 @@ app.use((req, res, next) => {
     if (req.path.startsWith("/auth")){
         return next();
     }
+    if (req.path.startsWith("/docs")){
+        return next();
+    }
     brainShield(req, res, next);
 });
 
@@ -46,5 +53,7 @@ app.use("/files", require("./routes/file.routes"));
 app.use("/brain", require("./routes/brain.routes"));
 
 app.use("/memory", require("./routes/memory.routes"));
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 module.exports = app;

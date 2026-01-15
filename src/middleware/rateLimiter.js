@@ -23,7 +23,7 @@ const rateLimiterMiddleware = (req, res, next) => {
         .then(() => {
             next();
         })
-        .catch(() ={
+        .catch(() => {
             res.status(429).json({
                 status: "ERROR",
                 message: "Too Many Requests"
