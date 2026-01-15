@@ -7,11 +7,14 @@ const compression = require("compression");
 require("dotenv").config();
 
 const brainShield = require("./middleware/brainShield");
+const rateLimiter = require("./middleware/rateLimiter");
 
 const app = express();
 
 app.use(helmet());
 app.use(compression());
+
+app.use(rateLimiter);
 
 app.use(cors());
 app.use(express.json());
