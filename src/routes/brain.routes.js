@@ -3,15 +3,16 @@ const router = require("express").Router();
 const auth = require("../middleware/authMiddleware");
 const GController = require("../controllers/graph.controller");
 const Controller = require("../controllers/brain.controller");
+const requireVerified = require("../middleware/requireVerified.js");
 
-router.post("/process", auth, Controller.intake);
+router.post("/process", auth, requireVerified, Controller.intake);
 
-router.post("/ask", auth, Controller.createBrainRequest);
+router.post("/ask", auth, requireVerified, Controller.createBrainRequest);
 
-router.get("/result/:id", auth, Controller.getResult);
+router.get("/result/:id", auth, requireVerified, Controller.getResult);
 
-router.get("/dreams", auth, Controller.getDreamJournal);
+router.get("/dreams", auth, requireVerified, Controller.getDreamJournal);
 
-router.get("/graph", auth, GController.getNeuroGraph);
+router.get("/graph", auth, requireVerified, GController.getNeuroGraph);
 
 module.exports = router;

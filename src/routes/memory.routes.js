@@ -1,16 +1,18 @@
 const router = require('express').Router();
 
+const requireVerified = require('../middleware/requireVerified');
 const auth = require('../middleware/authMiddleware');
 const Controller = require('../controllers/memory.controller');
 
-router.get('/', auth, Controller.listMemories);
 
-router.post("/", auth, Controller.addMemory);
+router.get('/', auth, requireVerified, Controller.listMemories);
 
-router.get('/search', auth, Controller.searchMemories);
+router.post("/", auth, requireVerified, Controller.addMemory);
 
-router.get('/:id', auth, Controller.getMemory);
+router.get('/search', auth, requireVerified, Controller.searchMemories);
 
-router.delete('/:id', auth, Controller.deleteMemory);
+router.get('/:id', auth, requireVerified, Controller.getMemory);
+
+router.delete('/:id', auth, requireVerified, Controller.deleteMemory);
 
 module.exports = router;
