@@ -10,7 +10,8 @@ exports.createBrainRequest = async (req,res) => {
         const {
             query,
             fileId,
-            mode = "default"
+            mode = "default",
+            targetLanguage = "English"
         } = req.body;
 
         const user = req.user;
@@ -41,6 +42,7 @@ exports.createBrainRequest = async (req,res) => {
             query,
             fileId,
             mode,
+            targetLanguage,
             lobe: "auto",
             selectedLobe: result.lobe,
             routerReason: result.reason,

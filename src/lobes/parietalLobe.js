@@ -5,7 +5,8 @@ async function processParietal({
     query,
     user,
     memories = [],
-    mode
+    mode,
+    targetLanguage
 }
 ) {
     const memoryPayload = memories.map(m =>({
@@ -19,7 +20,8 @@ async function processParietal({
         query,
         memory: JSON.stringify(memoryPayload),
         selectedLobe: "parietal",
-        mode
+        mode,
+        targetLanguage
     });
 
     const lobePrompt = `You Are the **Parietal Lobe** of a digital brain.

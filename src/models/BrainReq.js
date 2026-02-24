@@ -35,6 +35,10 @@ const brainRequestSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.Mixed,
         default: null,
     },
+    targetLanguage: {
+    type: String,
+    default: "English"
+    },
     error: {
         type: String,
         default: null,

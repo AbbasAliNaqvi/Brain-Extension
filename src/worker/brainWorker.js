@@ -52,6 +52,7 @@ async function runLobeProcessor(task) {
     });
 
     console.log(`>>> ROUTER SELECTED: ${routing.lobe} (${routing.reason})`);
+    console.log(`>>> TARGET LANGUAGE: ${task.targetLanguage || "English"}`); 
 
     switch(routing.lobe) {
         case "frontal":
@@ -59,7 +60,8 @@ async function runLobeProcessor(task) {
                 query: task.query,
                 user: { id: task.userId },
                 memory: contextBlock,
-                mode: task.mode
+                mode: task.mode,
+                targetLanguage: task.targetLanguage 
             });
             break;
         
@@ -69,7 +71,8 @@ async function runLobeProcessor(task) {
                 fileContent,
                 user: { id: task.userId },
                 memory: contextBlock,
-                mode: task.mode
+                mode: task.mode,
+                targetLanguage: task.targetLanguage 
             });
             break;
         
@@ -78,7 +81,8 @@ async function runLobeProcessor(task) {
                 query: task.query,
                 user: { id: task.userId },
                 memories: past,
-                mode: task.mode
+                mode: task.mode,
+                targetLanguage: task.targetLanguage 
             });
             break;
 
@@ -88,7 +92,8 @@ async function runLobeProcessor(task) {
                 fileId: task.fileId,
                 user: { id: task.userId },
                 memory: contextBlock,
-                mode: task.mode
+                mode: task.mode,
+                targetLanguage: task.targetLanguage 
             });
             break;
             
@@ -98,6 +103,7 @@ async function runLobeProcessor(task) {
                 result: "NO IMPLEMENTATION FOR THIS LOBE"
             };
     }
+    
     task.selectedLobe = routing.lobe;
     task.routerReason = routing.reason;
     task.routerConfidence = routing.confidence;

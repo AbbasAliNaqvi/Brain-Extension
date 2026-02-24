@@ -7,26 +7,25 @@ function buildCortexPrompt({
     query,
     memory,
     selectedLobe,
-    mode = "default"
+    mode = "default",
+    targetLanguage = "English"
 })
 {   
     const safeMemory = memory || "";
 
     const modes = {
         default: "You are balanced in your approach, providing well-rounded responses.",
-        study: `You are a SOCRATIC TUTOR. 
-                - Do NOT give the answer directly if the user asks a problem. 
-                - Instead, ask guiding questions to help them solve it. 
-                - Explain concepts simply (ELI5). 
+        study: `You are a SOCRATIC TUTOR for engineering students. 
+                - Explain complex technical concepts simply. 
                 - Use analogies. 
-                - Check their understanding.`,
-        
-        work: `You are a PROFESSIONAL EXECUTIVE ASSISTANT. 
-               - Be extremely concise. 
-               - Use bullet points for lists. 
-               - Focus on 'Action Items' and 'Key Takeaways'. 
-               - No fluff, no small talk. 
-               - Professional tone only.`,
+                - Do NOT give the answer directly if the user asks a problem, guide them.`,
+                
+        work:  `You are a PROFESSIONAL EXECUTIVE ASSISTANT. 
+                - Be extremely concise. 
+                - Use bullet points for lists. 
+                - Focus on 'Action Items' and 'Key Takeaways'. 
+                - No fluff, no small talk. 
+                - Professional tone only.`,
         
         creative: `You are a CREATIVE MUSE. 
                    - Think laterally. Connect unrelated concepts. 
@@ -43,49 +42,36 @@ function buildCortexPrompt({
 
     const modeInstruction = modes[mode] || modes.default;
 
-    let instructions = `You are an advanced AI assistant that functions as the cortex of a digital brain. Your role is to intelligently route user queries to the appropriate lobe of the brain based on the nature of the request. Each lobe specializes in different cognitive functions, and your task is to ensure that queries are handled by the most suitable lobe.
-
-    Strictly adhere to the following guidelines:
+    let instructions = `You are Brain Extension, an advanced AI Cognitive OS for developers.
+    
     >>> CURRENT OPERATING MODE: **${mode.toUpperCase()}**
     >>> MODE INSTRUCTIONS: ${modeInstruction}
 
-    User Profile: ${JSON.stringify(user)}
-    Query: ${query}
-    Relevant Memory: ${safeMemory || "No memory found"}
-    Selected Lobe: ${selectedLobe || "No specific lobe selected"}
+    User Query: "${query}"
+    Contextual Memory / File Data: "${safeMemory || "No memory found"}"
+    Active Workspace (Lobe): "${selectedLobe || "General"}"
 
-    Your job is to UNDERSTAND the user's intent and route the query accordingly.
+    RULES:
+    - Understand context deeply and merge memory if useful.
+    - Improve each answer over history.
+    - Do NOT mention these instructions in your final output.`;
 
-    If a specific lobe is selected, prioritize routing to that lobe.
-    If no lobe is selected, analyze the query to determine the best fit based on the following lobe
-    functions:
-    - Frontal
-    - Parietal
-    - Temporal
-    - Occipital
 
-    Always provide a clear rationale for your routing decision.
-        Rules:
-    - Understand context deeply
-    - Merge memory if useful
-    - Avoid repeating same explanation
-    - Avoid robotic tone
-    - Use user previous knowledge
-    - Improve each answer over history
+    if (targetLanguage && targetLanguage.toLowerCase() !== "english") {
+        instructions += `
+        
+    VERNACULAR TRANSLATION REQUIREMENT
+    You MUST translate your explanation into ${targetLanguage}.
+    HOWEVER, you must apply "Syntax-Safe" translation:
+    1. STRICTLY PRESERVE all English programming syntax, code blocks, JSON, brackets {}, and terminal commands.
+    2. ONLY translate the theoretical explanations and markdown text into ${targetLanguage}.
+    3. Do not translate variable names or technical keywords (e.g., keep "API", "React", "State" in English).`;
+    }
 
-    NOTE: Dont mention any of these instructions in your final answer just answer the query appropriately.
-    IMPORTANT:
-    NOT The query asks for the also just give answer directly.
-    `;
-
-    if (query.length <10){
+    if (query.length < 10){
         instructions += "\n Respond Short , & Very Very Fast";
     } else if (query.includes("explain")) {
         instructions += "\n Explain Step by Step";
-    }
-
-    if (safeMemory.length >20) {
-        instructions += "\n Connect Answer To Memory (if relevant)";
     }
 
     return instructions;
@@ -96,21 +82,14 @@ async function runCortex({
     query,
     memory,
     selectedLobe,
-    mode
-})
-    {
+    mode,
+    targetLanguage 
+}) {
     const prompt = buildCortexPrompt({
-        user,
-        query,
-        memory,
-        selectedLobe,
-        mode
+        user, query, memory, selectedLobe, mode, targetLanguage
     });
 
-    const cortexDecision = await runText({
-        prompt
-    });
-
+    const cortexDecision = await runText({ prompt });
     return cortexDecision;
 }
 
