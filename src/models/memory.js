@@ -22,6 +22,11 @@ const MemorySchema = new mongoose.Schema({
         type: [Number],
         default: [],
     },
+    workspaceId: {
+        type: String,
+        default: "General",
+        index: true 
+    },
     context: {
         type: String
     },
@@ -29,6 +34,14 @@ const MemorySchema = new mongoose.Schema({
         type: String,
         enum: ["answer","fact","summary","other"],
         default: "answer"
+    },
+    decayRate: {
+        type: Number,
+        default: 0 
+    },
+    nextReviewDate: {
+        type: Date,
+        default: Date.now 
     },
     createdAt: {
         type: Date,

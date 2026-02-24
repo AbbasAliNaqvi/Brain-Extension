@@ -39,6 +39,10 @@ const brainRequestSchema = new mongoose.Schema({
     type: String,
     default: "English"
     },
+    workspaceId: {
+        type: String,
+        default: "General"
+    },
     error: {
         type: String,
         default: null,

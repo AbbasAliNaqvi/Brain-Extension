@@ -11,7 +11,8 @@ exports.createBrainRequest = async (req,res) => {
             query,
             fileId,
             mode = "default",
-            targetLanguage = "English"
+            targetLanguage = "English",
+            workspaceId = "General"
         } = req.body;
 
         const user = req.user;
@@ -38,6 +39,7 @@ exports.createBrainRequest = async (req,res) => {
 
         const doc = await BrainReq.create({
             userId: user._id,
+            workspaceId,
             inputType,
             query,
             fileId,

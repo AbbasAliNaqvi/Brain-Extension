@@ -2,12 +2,14 @@ const Memory = require('../models/memory');
 
 async function findRelevantMemory(
     userId,
-    query
+    query,
+    workspaceId = "General" 
 ) {
     const memories = await Memory.find({
-        userId,
+        userId: userId,
+        workspaceId: workspaceId, 
         content: {
-            $regex: query.split(" ")[0],
+            $regex: query.split(" ")[0], 
             $options: "i"
         }
     }).sort({

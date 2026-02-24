@@ -189,3 +189,56 @@ exports.deleteMemory = async (req, res) => {
         });
     }
 };
+
+exports.getFlashcardsDue = async (req, res) => {
+    try {
+        const { workspaceId = "General" } = req.query; 
+        const today = new Date();
+
+        const dueMemories = await Memory.find({
+            userId: req.user._id,
+            workspaceId: workspaceId,
+            nextReviewDate: { $lte: today } 
+        })
+        .sort({ nextReviewDate: 1 })
+        .limit(10); 
+
+        return res.json({
+            status: "OK",
+            count: dueMemories.length,
+            flashcards: dueMemories
+        });
+    } catch (err) {
+        return res.status(500).json({ status: "ERROR", message: err.message });
+    }
+};
+
+exports.updateMemoryReview = async (req, res) => {
+    try {
+        const { memoryId, score } = req.body; 
+        const memory = await Memory.findById(memoryId);
+
+        if (!memory) return res.status(404).json({ message: "Memory not found" });
+
+        if (score >= 3) {
+            memory.decayRate += 1;
+        } else {
+            memory.decayRate = 0; 
+        }
+
+        const daysToAdd = memory.decayRate === 0 ? 0 : Math.pow(2, memory.decayRate);
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + daysToAdd);
+
+        memory.nextReviewDate = nextDate;
+        await memory.save();
+
+        return res.json({ 
+            status: "OK", 
+            message: "Memory consolidated.", 
+            nextReviewDate: nextDate 
+        });
+    } catch (err) {
+        return res.status(500).json({ status: "ERROR", message: err.message });
+    }
+};

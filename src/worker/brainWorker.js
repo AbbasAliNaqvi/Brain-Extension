@@ -22,7 +22,8 @@ async function runLobeProcessor(task) {
 
     const past = await findRelevantMemory(
         task.userId,
-        task.query
+        task.query,
+        task.workspaceId
     );
 
     console.log(`=== FOUND ${past.length} RELEVANT MEMORIES FOR CONTEXT ===`);
@@ -115,6 +116,7 @@ async function saveMemory(task, output) {
     if (!output) return;
     await Memory.create({
         userId: task.userId,
+        workspaceId: task.workspaceId || "General",
         BrainReqId: task._id,
         content: output,
         types: "answer",

@@ -11,6 +11,10 @@ router.post("/", auth, requireVerified, Controller.addMemory);
 
 router.get('/search', auth, requireVerified, Controller.searchMemories);
 
+router.get("/review", auth, Controller.getFlashcardsDue);
+
+router.post("/review", auth, Controller.updateMemoryReview);
+
 router.get('/:id', auth, requireVerified, Controller.getMemory);
 
 router.delete('/:id', auth, requireVerified, Controller.deleteMemory);
