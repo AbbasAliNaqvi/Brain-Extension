@@ -31,13 +31,11 @@ exports.signup = async ( {
     ip
 }) => {
     const exists = await User.findOne({ email });
-    if (exists) 
-        throw { status: 400, message: "Email already in use"  };
-    const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    if (exists) throw { status: 400, message: "Email already in use"};
     const user = await User.create({
         name,
         email,
-        password: hashed,
+        password: password,
         avatarUrl,
     });
     const accessToken = generateAccessToken({ userId : user._id });
@@ -62,23 +60,26 @@ exports.login = async ({
     device,
     ip
 }) => {
-    const user = await User.findOne({
-        email
-    });
-    if (!user)
+    const user = await User.findOne({ email });
+    
+    if (!user) {
         throw {
             status: 400,
             message: "User Not Found"
         };
-    const match = await bcrypt.compare(password, user.password);
-    if (!match)
-        throw{
-            status: 401,
-            message: "Invalid Credentials"
-        };
+    }
 
-    const accessToken = generateAccessToken({
-        userId: user._id
+    const match = await user.matchPassword(password);
+    
+    if (!match) {
+        throw { 
+            status: 401, 
+            message: "Invalid Credentials" 
+        };
+    }
+
+    const accessToken = generateAccessToken({ 
+        userId: user._id 
     });
     const refreshToken = generateRefreshToken();
 
