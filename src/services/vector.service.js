@@ -1,11 +1,12 @@
 const { GoogleGenerativeAIEmbeddings } = require("@langchain/google-genai");
 
 const embeddings = new GoogleGenerativeAIEmbeddings({
-    modelName: "text-embedding-004",
+    modelName: "gemini-embedding-001",
     apiKey: process.env.GEMINI_API_KEY,
+    outputDimensionality: 768 
 });
 
-exports.generateVector = async  (text) => {
+exports.generateVector = async (text) => {
     try {
         const vector = await embeddings.embedQuery(text);
         console.log(`[VectorService] Generated Vector With ${vector.length} dimensions`);
