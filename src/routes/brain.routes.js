@@ -15,4 +15,6 @@ router.get("/dreams", auth, requireVerified, Controller.getDreamJournal);
 
 router.get("/graph", auth, requireVerified, GController.getNeuroGraph);
 
+router.post('/coAsk', auth, requireVerified, Controller.coAsk);
+
 module.exports = router;

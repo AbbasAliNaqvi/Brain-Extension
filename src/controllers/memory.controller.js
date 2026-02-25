@@ -123,35 +123,52 @@ exports.addMemory = async (req, res) => {
         const userId = req.user._id;
         const {
             text,
-            type = "answer"
+            type = "flashcard",
+            workspaceId = "General"
         } = req.body;
 
-        if (!text) {
-            return res.status(400).json({ status: "ERROR", message: "Content is required" });
+        if (!text || text.trim().length === 0) {
+            return res.status(400).json({ 
+                status: "ERROR", 
+                message: "Content payload is required." 
+            });
         }
+
+        console.log(`[Ingestion] Vectorizing memory for workspace: ${workspaceId}`);
+        const vector = await generateVector(text);
 
         const memoryData = {
             userId,
             content: text,
-            types: type
+            types: type,
+            workspaceId, 
+            vector, 
+            nextReviewDate: new Date(), 
+            decayRate: 0
         };
 
         const newMemory = await Memory.create(memoryData);
 
-        await publishEvent("MEMORY_INGESTED", {
-            id: newMemory._id,
-            userId: userId,
-            content: newMemory.content,
-        });
+        if (typeof publishEvent === 'function') {
+            publishEvent("MEMORY_INGESTED", {
+                id: newMemory._id,
+                userId: userId,
+                content: newMemory.content,
+            }).catch(err => console.error("[Event Bus] Publish Warning:", err.message));
+        }
 
         return res.status(201).json({
             status: "OK",
-            message: "MEMORY ADDED SUCCESSFULLY !!",
-            memory: newMemory
+            message: "Context successfully locked into vector database.",
+            memory: {
+                _id: newMemory._id,
+                workspaceId: newMemory.workspaceId,
+                nextReviewDate: newMemory.nextReviewDate
+            }
         });
 
     } catch (err) {
-        console.error("ADD MEMORY ERROR:", err);
+        console.error("[Memory Controller] Add Memory Error:", err);
         return res.status(500).json({
             status: "ERROR",
             message: err.message

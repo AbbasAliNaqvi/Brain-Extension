@@ -3,7 +3,11 @@ const {
     decideFinalLobe
 } = require("../services/brainRouter.service");
 const File = require("../models/file");
+
 const { request } = require("express");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.createBrainRequest = async (req,res) => {
     try {
@@ -161,5 +165,49 @@ exports.getDreamJournal = async (req, res) => {
             status: "ERROR",
             message: err.message
         });
+    }
+};
+
+exports.coAsk = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { text, mode, workspaceId = "General" } = req.body;
+
+        if (!text) return res.status(400).json({ status: "ERROR", message: "Text required" });
+
+        let prompt = "";
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" }); 
+
+        if (mode === "desi_analogy") {
+            prompt = `You are a brilliant technical tutor for Indian students. Explain this complex technical concept using a very relatable Indian cultural analogy (e.g., Mumbai Locals, Dabbawalas, Cricket, Indian traffic, Indian weddings, or IRCTC queues). Make it highly accurate technically, but incredibly fun and easy to understand for an Indian context. \n\nConcept to explain: "${text}"`;
+        } 
+        else if (mode === "neural_link") {
+            const vector = await generateVector(text);
+            const pastMemories = await Memory.aggregate([
+                {
+                    $vectorSearch: {
+                        index: "vector_index", path: "vector", queryVector: vector,
+                        numCandidates: 50, limit: 3, filter: { userId: new mongoose.Types.ObjectId(userId) }
+                    }
+                }
+            ]);
+
+            if (pastMemories && pastMemories.length > 0) {
+                const contextNotes = pastMemories.map(m => m.content).join("\n- ");
+                prompt = `You are Brain OS, a personalized learning copilot. The user is currently reading this text online:\n"${text}"\n\nHere are notes they previously saved in their Second Brain:\n${contextNotes}\n\nTask: Explain the text they are reading briefly, and then EXPLICITLY connect it to their past notes. Show them exactly how this new concept relates to what they already know. Frame it as "I noticed you previously learned about..."`;
+            } else {
+                prompt = `Explain this technical concept simply: "${text}". Add a note at the end saying "You have no past memories saved about this topic yet. Save this to your Neural Net to build your knowledge graph!"`;
+            }
+        }
+
+        console.log(`[Copilot] Processing ${mode} for user ${userId}...`);
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+
+        return res.status(200).json({ status: "OK", response: responseText });
+
+    } catch (err) {
+        console.error("[Copilot Error]", err);
+        return res.status(500).json({ status: "ERROR", message: err.message });
     }
 };
