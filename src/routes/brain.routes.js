@@ -1,9 +1,13 @@
 const router = require("express").Router();
 
 const auth = require("../middleware/authMiddleware");
+const requireVerified = require("../middleware/requireVerified.js");
+
 const GController = require("../controllers/graph.controller");
 const Controller = require("../controllers/brain.controller");
-const requireVerified = require("../middleware/requireVerified.js");
+
+const StreamController = require("../controllers/stream.controller");
+const StatsController = require("../controllers/stats.controller");
 
 router.post("/process", auth, requireVerified, Controller.intake);
 
@@ -15,6 +19,14 @@ router.get("/dreams", auth, requireVerified, Controller.getDreamJournal);
 
 router.get("/graph", auth, requireVerified, GController.getNeuroGraph);
 
-router.post('/coAsk', auth, requireVerified, Controller.coAsk);
+router.post("/coAsk", auth, requireVerified, Controller.coAsk);
+
+router.post("/stream", auth, StreamController.streamCoAsk);
+
+router.get("/stats", auth, StatsController.getStats);
+
+router.post("/vision", auth, requireVerified, Controller.vision);
+
+router.post("/translate", auth, Controller.translate);
 
 module.exports = router;

@@ -3,7 +3,10 @@ const {
     decideFinalLobe
 } = require("../services/brainRouter.service");
 const File = require("../models/file");
+const { generateVector } = require("../services/vector.service");
+const Memory = require("../models/memory");
 
+const mongoose = require("mongoose");
 const { request } = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
@@ -200,14 +203,104 @@ exports.coAsk = async (req, res) => {
             }
         }
 
-        console.log(`[Copilot] Processing ${mode} for user ${userId}...`);
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
 
         return res.status(200).json({ status: "OK", response: responseText });
 
     } catch (err) {
-        console.error("[Copilot Error]", err);
         return res.status(500).json({ status: "ERROR", message: err.message });
+    }
+};
+
+exports.vision = async (req, res) => {
+    try {
+        const { image, workspaceId = "General" } = req.body;
+        const userId = req.user._id;
+
+        if (!image || !image.startsWith("data:image/")) {
+            return res.status(400).json({
+                status: "ERROR",
+                message: "image field must be a base64 data URL"
+            });
+        }
+
+        const [header, base64Data] = image.split(",");
+        const mimeType = header.match(/data:(.*);base64/)?.[1] || "image/jpeg";
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+        const prompt = `You are an expert technical educator analyzing a screen capture.
+        Analyze this screenshot carefully and provide:
+        1. What's in this image
+        2. Complete Explanation
+        3. Key Takeaways
+        4. Action Items
+        Be specific, technically accurate, and use Indian tech context where helpful.`;
+
+        const result = await model.generateContent([
+            prompt,
+            { inlineData: { data: base64Data, mimeType } }
+        ]);
+
+        const explanation = result.response.text();
+        const vector = await generateVector(explanation.substring(0, 1000));
+
+        await Memory.create({
+            userId,
+            content: `[Snap & Learn]\n${explanation.substring(0, 2000)}`,
+            types: "answer",
+            workspaceId,
+            vector,
+            nextReviewDate: new Date(),
+            decayRate: 0
+        });
+
+        return res.status(200).json({
+            status: "OK",
+            explanation,
+            autoSaved: true,
+            workspaceId
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
+    }
+};
+
+exports.translate = async (req, res) => {
+    try {
+        const { text, targetLanguage = "Hindi" } = req.body;
+
+        if (!text || text.trim().length < 2) {
+            return res.status(400).json({
+                status: "ERROR",
+                message: "text field is required"
+            });
+        }
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+        const prompt = `Translate the following text to ${targetLanguage}.
+        Rules: Preserve technical terms, proper nouns, and code snippets as-is (in English). For Hinglish: mix Hindi and English naturally. Return ONLY the translated text.
+        Text to translate: "${text}"`;
+
+        const result = await model.generateContent(prompt);
+        const translation = result.response.text().trim().replace(/^["']|["']$/g, "");
+
+        return res.status(200).json({
+            status: "OK",
+            translation,
+            sourceText: text,
+            targetLanguage
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            status: "ERROR",
+            message: err.message
+        });
     }
 };
