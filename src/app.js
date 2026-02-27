@@ -55,6 +55,8 @@ app.use("/brain", require("./routes/brain.routes"));
 
 app.use("/memory", require("./routes/memory.routes"));
 
+app.use("/agent", require("./routes/agent.routes"));
+
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 module.exports = app;
