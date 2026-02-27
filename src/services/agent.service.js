@@ -16,7 +16,7 @@ Return ONLY valid JSON — no markdown, no explanation — in exactly this schem
   ]
 }
 
-SELECTOR RULES (most important):
+SELECTOR RULES:
 1. For search inputs: prefer input[name="q"], input[type="search"], textarea[name="q"]
 2. For buttons: use XPath //button[contains(text(),'Search')] or //button[@type='submit']
 3. For links: use XPath //a[contains(text(),'Text')] or [role="link"]
@@ -26,7 +26,6 @@ SELECTOR RULES (most important):
 
 Only return JSON. No other text.`;
 
-// Helpers
 const _extractSearchQuery = (error) => error.split('\n')[0].replace(/at\s+\w+[\w.]*\s*\(.*?\)/g, '').substring(0, 120);
 const _classifyError = (error) => {
     const l = error.toLowerCase();
@@ -39,7 +38,7 @@ const _stripHtml = (html) => html.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/cod
 
 exports.generatePlan = async (prompt) => {
     const completion = await groq.chat.completions.create({
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages: [
             { role: 'system', content: AGENT_SYSTEM_PROMPT },
             { role: 'user', content: prompt.trim() },
@@ -66,8 +65,12 @@ exports.generateDebugFix = async (errorText, code) => {
 
     let sources = [];
     try {
-        const soRes = await fetch(`https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=votes&q=${encodeURIComponent(searchQuery)}&accepted=True&answers=1&site=stackoverflow&filter=withbody&pagesize=5`);
+        const STACK_KEY = process.env.STACK_EXCHANGE_KEY || '';
+        const url = `https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=votes&q=${encodeURIComponent(searchQuery)}&accepted=True&answers=1&site=stackoverflow&filter=withbody&pagesize=5&key=${STACK_KEY}`;
+        
+        const soRes = await fetch(url);
         const soData = await soRes.json();
+        
         sources = (soData.items || []).slice(0, 4).map(item => ({
             title: item.title,
             link: item.link,
@@ -75,7 +78,9 @@ exports.generateDebugFix = async (errorText, code) => {
             body: _stripHtml(item.body || '').substring(0, 300),
             tags: item.tags?.slice(0, 4) || [],
         }));
-    } catch (e) { console.warn("StackOverflow fetch failed:", e.message); }
+    } catch (e) { 
+        console.warn("StackOverflow fetch failed:", e.message); 
+    }
 
     const contextParts = [
         `Error: ${cleanError}`,
@@ -84,7 +89,7 @@ exports.generateDebugFix = async (errorText, code) => {
     ].filter(Boolean).join('\n');
 
     const completion = await groq.chat.completions.create({
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages: [
             { role: 'system', content: 'You are an expert debugging assistant. Format response with: 1) Root cause, 2) Exact fix with code, 3) Prevention tip.' },
             { role: 'user', content: contextParts },
@@ -101,6 +106,7 @@ exports.analyzeJobFit = async (jobDescription, token) => {
     try {
         const HOST = process.env.HOST || `localhost:${process.env.PORT || 5000}`;
         const PROTOCOL = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+        
         const memRes = await fetch(`${PROTOCOL}://${HOST}/memory/search?query=skills experience expertise&limit=20`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -108,10 +114,12 @@ exports.analyzeJobFit = async (jobDescription, token) => {
         if (memData.memories?.length) {
             userContext = memData.memories.map(m => m.content).join('\n').substring(0, 2000);
         }
-    } catch (e) { console.warn("Memory context fetch failed:", e.message); }
+    } catch (e) { 
+        console.warn("Memory context fetch failed:", e.message); 
+    }
 
     const completion = await groq.chat.completions.create({
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages: [
             { role: 'system', content: `Analyze job fit and return ONLY JSON:\n{"role": "Title", "company": "Name", "matchScore": 80, "matchedSkills": [], "missingSkills": [], "actionPlan": []}` },
             { role: 'user', content: `JOB DESCRIPTION:\n${jobDescription.substring(0, 3000)}\n\nUSER PROFILE:\n${userContext}` },
