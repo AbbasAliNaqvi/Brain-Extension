@@ -123,7 +123,7 @@ exports.addMemory = async (req, res) => {
         const userId = req.user._id;
         const {
             text,
-            type = "flashcard",
+            type = "answer",
             workspaceId = "General"
         } = req.body;
 
