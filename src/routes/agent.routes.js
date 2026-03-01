@@ -1,12 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const agentController = require('../controllers/agent.controller');
-const brainShield = require('../middleware/brainShield');
+const agentController = require("../controllers/agent.controller");
 
-router.use(brainShield); 
-
-router.post('/plan', agentController.planAgentTask);
-router.post('/debug', agentController.debugError);
-router.post('/jobfit', agentController.analyzeJobFit);
+router.post("/plan", agentController.planAgentTask);
+router.post("/debug", agentController.debugError);
+router.post("/cluster-tabs", agentController.clusterTabs);
 
 module.exports = router;
