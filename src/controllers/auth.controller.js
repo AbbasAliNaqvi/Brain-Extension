@@ -347,3 +347,79 @@ exports.resetPasswordBridge = (req, res) => {
 
     res.send(html);
 };
+
+const otpStore = new Map();
+
+exports.requestRemoteAccess = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ status: "ERROR", message: "Email is required" });
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ status: "ERROR", message: "User not found" });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        otpStore.set(email, {
+            code: otp,
+            expiresAt: Date.now() + 5 * 60 * 1000
+        });
+
+        const fs = require("fs");
+        const path = require("path");
+        const templatePath = path.join(__dirname, "../templates/remoteAccess.html");
+        
+        let html = fs.readFileSync(templatePath, "utf8");
+        html = html.replace(/{{CODE}}/g, otp);
+
+        await sendEmail(
+            user.email,
+            "Remote Access Code - Brain Extension",
+            html
+        );
+
+        res.status(200).json({ status: "OK", message: "OTP sent successfully" });
+    } catch (error) {
+        console.error("OTP Error:", error);
+        res.status(500).json({ status: "ERROR", message: "Internal server error" });
+    }
+};
+
+exports.verifyRemoteAccess = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        
+        const record = otpStore.get(email);
+        if (!record) {
+            return res.status(400).json({ status: "ERROR", message: "OTP expired or not requested" });
+        }
+
+        if (Date.now() > record.expiresAt) {
+            otpStore.delete(email);
+            return res.status(400).json({ status: "ERROR", message: "OTP has expired" });
+        }
+
+        if (record.code !== code) {
+            return res.status(401).json({ status: "ERROR", message: "Invalid OTP code" });
+        }
+
+        otpStore.delete(email);
+
+        const user = await User.findOne({ email });
+        const jwt = require("jsonwebtoken");
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+        res.status(200).json({
+            status: "OK",
+            message: "Remote access granted",
+            token: token,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: "ERROR", message: "Verification failed" });
+    }
+};

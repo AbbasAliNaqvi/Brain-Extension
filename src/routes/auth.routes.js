@@ -21,6 +21,10 @@ router.post("/forgot-password", controllers.forgotPassword);
 router.patch("/reset-password/:token", controllers.resetPassword);
 router.get("/reset-password-bridge/:token", controllers.resetPasswordBridge);
 
+//Remote Access
+router.post("/remote-access/request", controllers.requestRemoteAccess);
+router.post("/remote-access/verify", controllers.verifyRemoteAccess);
+
 //Protected Routes
 router.get("/me", authMiddleware, controllers.me);
 

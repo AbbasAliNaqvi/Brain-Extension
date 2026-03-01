@@ -17,13 +17,15 @@ const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  }
+  },
+  transports: ["websocket"],
+  allowEIO3: true,
+  path: "/socket.io/"
 });
 
 socketService.init(io);
 
 async function startApp() {
-
   await connectDB();
 
   startBrainWorker();
