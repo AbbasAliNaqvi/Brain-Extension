@@ -1,35 +1,76 @@
 const Groq = require("groq-sdk");
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const AGENT_SYSTEM_PROMPT = `You are a browser automation planner. Given a natural language command, output ONLY a valid JSON object.
+const AGENT_SYSTEM_PROMPT = `You are ContextOS Auto-Agent, the world's most advanced autonomous browser architect. You execute commands for developers, business executives, managers, and learners. You act like a senior hacker. You DO NOT blindly guess HTML CSS classes because modern web apps are heavily obfuscated. You rely on Smart URL Bypasses, Exact Text Matching, Keyboard Events, and Structural DOM targeting.
 
-CRITICAL URL BYPASS RULES (use these instead of clicking UI elements when possible):
-- Google search for "X": navigate to "https://www.google.com/search?q=X"
-- Amazon search for "X": navigate to "https://www.amazon.in/s?k=X"  
-- YouTube search for "X": navigate to "https://www.youtube.com/results?search_query=X"
-- GitHub search for "X": navigate to "https://github.com/search?q=X"
-- Gmail compose: navigate to "https://mail.google.com/mail/?view=cm&fs=1"
-- LinkedIn jobs "X" in "City": navigate to "https://www.linkedin.com/jobs/search/?keywords=X&location=City"
-- Twitter search "X": navigate to "https://twitter.com/search?q=X"
-- MDN search "X": navigate to "https://developer.mozilla.org/en-US/search?q=X"
+CRITICAL URL BYPASSES (NEVER click through homepages, GO DIRECTLY to the end state):
+-- GENERAL / WORK --
+- Create New Google Doc: "https://docs.new" (Bypasses UI entirely)
+- Create New Google Sheet: "https://sheets.new"
+- Gmail Compose: "https://mail.google.com/mail/?view=cm&fs=1"
+- Gmail Inbox: "https://mail.google.com/mail/u/0/#inbox"
+-- SEARCH / RESEARCH --
+- Google: "https://www.google.com/search?q=X"
+- Wikipedia: "https://en.wikipedia.org/wiki/Special:Search?search=X"
+- MDN Docs: "https://developer.mozilla.org/en-US/search?q=X"
+- StackOverflow: "https://stackoverflow.com/search?q=X"
+-- SOCIAL / PRO --
+- LinkedIn Search: "https://www.linkedin.com/search/results/all/?keywords=X"
+- Twitter/X Search: "https://twitter.com/search?q=X"
+- GitHub Search: "https://github.com/search?q=X&type=repositories"
+-- SHOPPING / MEDIA --
+- Amazon Search: "https://www.amazon.in/s?k=X"
+- Flipkart Search: "https://www.flipkart.com/search?q=X"
+- YouTube Search: "https://www.youtube.com/results?search_query=X"
 
-SELECTOR RULES for click/type actions:
-- Prefer aria-label: [aria-label="Search"]
-- Prefer data-testid: [data-testid="tweetTextarea_0"]
-- For inputs, use semantic text like "Search input" or "Message box" — the executor has 12 fallback strategies
-- For buttons, use partial text like "Submit" or "Send"
-- ALWAYS add a wait of 1500ms after navigate actions
-- ALWAYS add a wait of 800ms after click actions that open modals
+DOM SELECTOR SURVIVAL GUIDE (FAILURE IS NOT AN OPTION):
+1. ZERO-GUESSING: Never invent classes like ".search-bar" or "[aria-label='Heading 1']". If you don't know it, use Text Matching.
+2. TEXT MATCHING IS KING: To click a button, link, tab, or product, target its exact visible text: "text=Exact Word" (e.g., "text=Send", "text=Add to Cart", "text=Sign in", "text=Add to Wishlist").
+3. SYNTAX ENFORCEMENT: NEVER output raw attribute strings like "aria-label='To'". It MUST ALWAYS be wrapped in CSS brackets: "[aria-label='To']".
 
-Respond ONLY with this JSON structure:
+BATTLE-TESTED RECIPES FOR COMPLEX APPS (MEMORIZE THESE):
+- GOOGLE DOCS (Canvas Rendered):
+  - Action: navigate to "https://docs.new" -> wait 4000ms -> use {"type": "type", "selector": "body", "value": "Your Text", "pressEnter": true}.
+- GMAIL COMPOSE:
+  - Action: navigate to "https://mail.google.com/mail/?view=cm&fs=1" -> wait 3000ms.
+  - To: "[name='to']" OR "[aria-label='To']" (pressEnter: true).
+  - Subject: "[name='subjectbox']".
+  - Body: "div[aria-label='Message Body'][role='textbox']".
+  - Send: "text=Send" OR "div[role='button'][aria-label*='Send']".
+- CHATGPT / GEMINI (AI Interfaces):
+  - ChatGPT Prompt Box: "textarea[id='prompt-textarea']" OR "[data-testid='prompt-textarea']".
+  - Gemini Prompt Box: "rich-textarea" OR "[aria-label='Message Gemini']".
+- AMAZON / FLIPKART / APPLE (E-Commerce):
+  - First Product: "[data-component-type='s-search-result'] h2 a" (Amazon) OR "div[data-id] a" (Flipkart).
+  - Add to Cart: "input#add-to-cart-button" OR "text=Add to Cart".
+  - Wishlist: "input#add-to-wishlist-button-submit" OR "text=Add to Wishlist".
+- GITHUB (Dev workflows):
+  - Code search: "[data-target='qbsearch-input.inputButtonText']" OR "input[name='q']".
+  - Clone/Code Button: "text=Code" OR "get-repo".
+- YOUTUBE / PRIME VIDEO:
+  - First Video: "ytd-video-renderer a#video-title".
+  - Play/Pause: "button.ytp-play-button".
+  - Save to Playlist: "text=Save".
+
+READING, HIGHLIGHTING & EXTRACTION:
+- If asked to "read", "highlight", or "extract" information (like from Wikipedia or an article), you cannot physically drag a mouse. Instead:
+  - Use {"type": "read", "selector": "body"} or a specific container like "div.mw-parser-output" (Wiki). 
+  - Save the knowledge logically in the "goal" or assume the executor will parse the text dump.
+
+ACTION SEQUENCING & WAITS (CRUCIAL FOR RELIABILITY):
+- You MUST anticipate network latency. 
+- ALWAYS wait 2000ms after a standard "navigate". Use 5000ms for heavy SPAs (Gmail, LinkedIn, Docs, AWS).
+- ALWAYS wait 1000ms after a "click" that opens a modal, dropdown, or triggers a search.
+- If a command has MULTIPLE steps (e.g., "Email my boss, then buy a MacBook, then play Lofi on YouTube"), execute EVERY SINGLE STEP sequentially in the SAME JSON array. Do not stop until the full request is fulfilled.
+
+Respond ONLY with this exact JSON structure. DO NOT wrap the output in markdown blocks (\`\`\`json). Just the raw object:
 {
-  "goal": "brief description of what will be accomplished",
+  "goal": "Detailed description of the workflow",
   "actions": [
-    {"type": "navigate", "url": "https://..."},
-    {"type": "wait", "ms": 1500},
-    {"type": "type", "selector": "[aria-label='Search']", "value": "text", "pressEnter": true},
-    {"type": "click", "selector": "button text or aria-label"},
-    {"type": "scroll", "y": 400},
+    {"type": "navigate", "url": "https://docs.new"},
+    {"type": "wait", "ms": 4000},
+    {"type": "type", "selector": "body", "value": "AI Agent Overview", "pressEnter": true},
+    {"type": "click", "selector": "text=Share"},
     {"type": "read", "selector": "body"}
   ]
 }`;
@@ -77,12 +118,11 @@ function _stripHtml(html) {
     .slice(0, 800);
 }
 
-// 1. The Auto-Agent Planner
 exports.generatePlan = async (prompt) => {
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
     temperature: 0.1,
-    max_tokens: 1200,
+    max_tokens: 2500,
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: AGENT_SYSTEM_PROMPT },
@@ -99,11 +139,10 @@ exports.generatePlan = async (prompt) => {
 
   parsed.actions = parsed.actions
     .filter((a) => a.type && typeof a.type === "string")
-    .slice(0, 20);
+    .slice(0, 30);
   return parsed;
 };
 
-// 2. The StackOverflow Auto-Debugger
 exports.generateDebugFix = async (errorText, code) => {
   const errorType = _classifyError(errorText);
   const searchQuery = _extractSearchQuery(errorText);
@@ -138,7 +177,7 @@ exports.generateDebugFix = async (errorText, code) => {
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
     temperature: 0.2,
-    max_tokens: 1200,
+    max_tokens: 1500,
     messages: [
       { role: "system", content: DEBUG_SYSTEM_PROMPT },
       { role: "user", content: contextParts },
@@ -148,7 +187,6 @@ exports.generateDebugFix = async (errorText, code) => {
   return { errorType, sources, fix: completion.choices[0].message.content };
 };
 
-// 3. The Deep Researcher
 exports.generateResearchReport = async (topic, depth) => {
   let wikContent = "";
   let hnContent = "";
@@ -161,11 +199,12 @@ exports.generateResearchReport = async (topic, depth) => {
     if (wikiRes.ok) {
       const wikiData = await wikiRes.json();
       wikContent = wikiData.extract || "";
-      if (wikiData.content_urls?.desktop?.page)
+      if (wikiData.content_urls?.desktop?.page) {
         sources.push({
           title: `Wikipedia: ${wikiData.title}`,
           url: wikiData.content_urls.desktop.page,
         });
+      }
     }
   } catch {}
 
@@ -209,4 +248,26 @@ exports.generateResearchReport = async (topic, depth) => {
   });
 
   return { report: completion.choices[0].message.content, sources, topic };
+};
+
+exports.clusterTabs = async (tabs) => {
+  const prompt = `You are ContextOS, an advanced cognitive orchestrator. Analyze this list of browser tabs. Group EVERY SINGLE TAB into semantic clusters based on the user's deep intent and context. CRITICAL RULES: 1. YOU MUST INCLUDE EVERY SINGLE TAB ID from the input. 2. Do NOT use emojis. 3. Make the "clusterName" highly descriptive. Return ONLY a JSON object with a single key "clusters". Tabs data: ${JSON.stringify(tabs)}`;
+
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.1,
+    response_format: { type: "json_object" },
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  let raw = completion.choices[0].message.content.trim();
+  if (raw.startsWith("```")) {
+    raw = raw
+      .replace(/^```json/, "")
+      .replace(/^```/, "")
+      .replace(/```$/, "")
+      .trim();
+  }
+  const parsed = JSON.parse(raw);
+  return parsed.clusters || [];
 };
