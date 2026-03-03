@@ -1,9 +1,9 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const mongoose = require("mongoose");
 const Memory = require("../models/memory");
 const { generateVector } = require("../services/vector.service");
+const Groq = require("groq-sdk");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY3 });
 
 function sendEvent(res, data) {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
@@ -112,11 +112,16 @@ exports.streamCoAsk = async (req, res) => {
         }
 
         const prompt = buildPrompt(mode, text.trim(), relevantMemories, targetLanguage);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-        const streamResult = await model.generateContentStream(prompt);
+        
+        const streamResult = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.3,
+            stream: true,
+        });
 
-        for await (const chunk of streamResult.stream) {
-            const chunkText = chunk.text();
+        for await (const chunk of streamResult) {
+            const chunkText = chunk.choices[0]?.delta?.content || "";
             if (chunkText) {
                 sendEvent(res, { chunk: chunkText });
             }

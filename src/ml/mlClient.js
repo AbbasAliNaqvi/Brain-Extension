@@ -1,24 +1,21 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GROQ_API_KEY3;
 
 if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables");
+    throw new Error("GROQ_API_KEY is not set in environment variables");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const groq = new Groq({ apiKey });
 
-const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-lite"
-})
-
-async function handleGeminiCall(fn, retries = 3) {
+async function handleGroqCall(fn, retries = 3) {
     try {
         return await fn();
     } catch (err) {
         const message = err?.message || "";
-        const isQuotaError = message.includes("429") || message.includes("quota") || message.includes("503");
-        let retryDelay = 10000;
+        const isQuotaError = message.includes("429") || message.includes("rate_limit") || message.includes("503");
+        let retryDelay = 5000;
+        
         try {
             const match = message.match(/retry in (\d+(\.\d+)?)/i);
             if (match && match[1]) {
@@ -27,38 +24,51 @@ async function handleGeminiCall(fn, retries = 3) {
         } catch (e) {}
 
         if (isQuotaError && retries > 0) {
-            console.warn(`Gemini Limit Hit. Pausing for ${retryDelay / 1000}s... (${retries} retries left)`);
+            console.warn(`Groq Limit Hit. Pausing for ${retryDelay / 1000}s... (${retries} retries left)`);
             await new Promise(res => setTimeout(res, retryDelay + 1000));
-            return handleGeminiCall(fn, retries - 1);
+            return handleGroqCall(fn, retries - 1);
         }
-        console.error("Gemini Fatal Error:", message);
+        console.error("Groq Fatal Error:", message);
         throw err;
     }
 }
 
 async function runText({ prompt }) {
-    return handleGeminiCall(async () => {
-        const result = await model.generateContentStream(prompt);
+    return handleGroqCall(async () => {
+        const streamResult = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.7,
+            stream: true,
+        });
+        
         let final = "";
-        for await (const chunk of result.stream) {
-            final += chunk.text();
+        for await (const chunk of streamResult) {
+            final += chunk.choices[0]?.delta?.content || "";
         }
         return final;
     });
 }
 
 async function runWithImage({ prompt, imageBuffer, mimeType }) {
-    return handleGeminiCall(async () => {
-        const response = await model.generateContent([
-            prompt,
-            {
-                inlineData: {
-                    mimeType,
-                    data: imageBuffer.toString("base64"),
+    return handleGroqCall(async () => {
+        const base64Image = imageBuffer.toString("base64");
+        const response = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        {
+                            type: "image_url",
+                            image_url: { url: `data:${mimeType};base64,${base64Image}` },
+                        },
+                    ],
                 },
-            },
-        ]);
-        return response.response.text();
+            ],
+            model: "llama-3.2-11b-vision-preview",
+        });
+        return response.choices[0]?.message?.content || "";
     });
 }
 
