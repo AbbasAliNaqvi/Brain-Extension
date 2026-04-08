@@ -1,16 +1,11 @@
-const { producer } = require("../events/eventBus");
+const { eventBus } = require("./eventBus");
 
 const STREAM_KEY = "BRAIN_STREAM";
 
-const publishEvent = async (type, payload)=> {
+const publishEvent = async (type, payload) => {
     try {
-        await producer.xadd(
-            STREAM_KEY,
-            '*',
-            "event", type,
-            "data", JSON.stringify(payload)
-        );
-        console.log(`[EventPublisher] Event Published: ${type}`);
+        eventBus.emit(STREAM_KEY, { type, data: payload });
+        console.log(`[EventPublisher] Local Event Published: ${type}`);
     } catch (error) {
         console.error("[EventPublisher] Publish Error:", error);
     }

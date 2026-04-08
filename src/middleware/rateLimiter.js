@@ -1,22 +1,18 @@
-const { RateLimiterRedis } = require('rate-limiter-flexible');
-const { producer } = require('../events/eventBus');
+const { RateLimiterMemory } = require('rate-limiter-flexible');
 
-const generalLimiter = new RateLimiterRedis({
-    storeClient: producer,
+const generalLimiter = new RateLimiterMemory({
     keyPrefix: 'middleware_general',
     points: 50,    
     duration: 1,   
 });
 
-const authLimiter = new RateLimiterRedis({
-    storeClient: producer,
+const authLimiter = new RateLimiterMemory({
     keyPrefix: 'middleware_auth',
     points: 20,    
     duration: 60,  
 });
 
-const llmLimiter = new RateLimiterRedis({
-    storeClient: producer,
+const llmLimiter = new RateLimiterMemory({
     keyPrefix: 'middleware_llm',
     points: 60,    
     duration: 60,  
